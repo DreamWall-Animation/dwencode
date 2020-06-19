@@ -9,35 +9,31 @@ FFmpeg python wrapper to encode image sequence to movie with overlay text.
 
 Python script:
 ```python
-    rectangle1 = dict(
-        x=96, y=60, width=768, height=480, color='#FFEE55', opacity=.2,
-        thickness=2)
-    rectangle2 = dict(
-        x=144, y=90, width=672, height=420, color='#909090', opacity=.3,
-        thickness=1)
-    image = dict(path='c:/path/to/dw_transp.png', x=10, y=10)
-    metadata = (('author', 'John Doe'), ('title', 'seq10_sh...'))
+rectangle1 = dict(x=96, y=60, width=768, height=480, color='#FFEE55', opacity=.2, thickness=2)
+rectangle2 = dict(x=144, y=90, width=672, height=420, color='#909090', opacity=.3, thickness=1)
+image = dict(path='c:/path/to/dw_transp.png', x=10, y=10)
+metadata = (('author', 'John Doe'), ('title', 'seq10_sh...'))
 
-    encode(
-        images_path='c:/path/to/image.%04d.jpg',
-        output_path='c:/path/to/encode_test.mov',
-        start=15,
-        end=60,
-        target_width=960,
-        target_height=600,
-        top_left='{datetime}',
-        top_middle='proj_ep010_sq120_sh0170_spline_v002_tk001',
-        top_middle_color='#FFEE55',
-        top_right='DreamWall',
-        bottom_left='f:%.1fmm' % 35,
-        bottom_middle='{framerange}',
-        bottom_right='John Doe',
-        font_path='c:/path/to/luxisr_0.ttf',
-        rectangles=[rectangle1, rectangle2],
-        overlay_image=image,
-        video_codec='-c:v libx264 -profile:v baseline -level 3.0',
-        metadata=metadata,
-        overwrite=True)
+encode(
+    images_path='c:/path/to/image.%04d.jpg',
+    output_path='c:/path/to/encode_test.mov',
+    start=15,
+    end=60,
+    target_width=960,
+    target_height=600,
+    top_left='{datetime}',
+    top_middle='proj_ep010_sq120_sh0170_spline_v002_tk001',
+    top_middle_color='#FFEE55',
+    top_right='DreamWall',
+    bottom_left='f:%.1fmm' % 35,
+    bottom_middle='{framerange}',
+    bottom_right='John Doe',
+    font_path='c:/path/to/luxisr_0.ttf',
+    rectangles=[rectangle1, rectangle2],
+    overlay_image=image,
+    video_codec='-c:v libx264 -profile:v baseline -level 3.0',
+    metadata=metadata,
+    overwrite=True)
 ```
 
 Windows commandline example:\
