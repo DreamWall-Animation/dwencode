@@ -66,7 +66,7 @@ def drawtext(text, x, y, color, font_path=None, size=36, start=None, end=None):
         "fontsize=%i" % size,
     ]
     args = ':'.join([a for a in args if a])
-    return ", drawtext=%s" % args
+    return "drawtext=%s" % args
 
 
 def draw_framerange(
@@ -89,14 +89,14 @@ def draw_framerange(
         # left
         left_x = '%s+%i-(tw)-3' % (x, size * 3)
         right_x = '%s+%i+3' % (x, size * 3)
-    return (
-        drawtext(left_text, left_x, y, color, font_path, size, start) +
+    return ','.join((
+        drawtext(left_text, left_x, y, color, font_path, size, start),
         drawtext(right_text, right_x, y, color, font_path, size, start)
-    )
+    ))
 
 
 def drawbox(x, y, width, height, color, opacity, thickness):
-    return ', drawbox=x=%s:y=%s:w=%s:h=%s:color=%s@%s:t=%s' % (
+    return 'drawbox=x=%s:y=%s:w=%s:h=%s:color=%s@%s:t=%s' % (
         x, y, width, height, color, opacity, thickness)
 
 
@@ -166,18 +166,18 @@ def encode(
         cmd += ' -f lavfi -i anullsrc=cl=stereo:r=48000'
 
     # Start filter complex
-    filter_complex = ''
+    filter_complex = []
 
     # Add overlay images
     if overlay_image:
-        filter_complex += drawimage(**overlay_image)
+        filter_complex.append(drawimage(**overlay_image))
 
     # Scaling and padding
     image_width, x_offset, y_offset = get_padding_values(
         width, height, target_width, target_height)
-    filter_complex += ',scale=%i:-1' % image_width
-    filter_complex += ',pad=%i:%i:%i:%i' % (
-        target_width, target_height, x_offset, y_offset)
+    filter_complex.append('scale=%i:-1' % image_width)
+    filter_complex.append('pad=%i:%i:%i:%i' % (
+        target_width, target_height, x_offset, y_offset))
 
     # Overlay text
     font_size = round(target_width / 53.0)
@@ -187,25 +187,25 @@ def encode(
     middle_pos = '(w-tw)/2'
 
     args = dict(font_path=font_path, size=font_size, start=start, end=end)
-    filter_complex += drawtext(
-        top_left, left_pos, top_pos, top_left_color, **args)
-    filter_complex += drawtext(
-        top_middle, middle_pos, top_pos, top_middle_color, **args)
-    filter_complex += drawtext(
-        top_right, right_pos, top_pos, top_right_color, **args)
-    filter_complex += drawtext(
-        bottom_left, top_pos, bottom_pos, bottom_left_color, **args)
-    filter_complex += drawtext(
-        bottom_middle, middle_pos, bottom_pos, bottom_middle_color, **args)
-    filter_complex += drawtext(
-        bottom_right, right_pos, bottom_pos, bottom_right_color, **args)
+    filter_complex.append(drawtext(
+        top_left, left_pos, top_pos, top_left_color, **args))
+    filter_complex.append(drawtext(
+        top_middle, middle_pos, top_pos, top_middle_color, **args))
+    filter_complex.append(drawtext(
+        top_right, right_pos, top_pos, top_right_color, **args))
+    filter_complex.append(drawtext(
+        bottom_left, top_pos, bottom_pos, bottom_left_color, **args))
+    filter_complex.append(drawtext(
+        bottom_middle, middle_pos, bottom_pos, bottom_middle_color, **args))
+    filter_complex.append(drawtext(
+        bottom_right, right_pos, bottom_pos, bottom_right_color, **args))
 
     # Add boxes (rectangles/safe-frames)
     for rectangle in rectangles or []:
-        filter_complex += drawbox(**rectangle)
+        filter_complex.append(drawbox(**rectangle))
 
     # Format filter complex
-    cmd += ' -filter_complex "%s"' % filter_complex
+    cmd += ' -filter_complex "%s"' % ','.join(filter_complex)
 
     # Metadata
     for key, value in metadata or []:
