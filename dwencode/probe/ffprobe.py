@@ -74,5 +74,5 @@ def get_formats(vid_file_paths, chunk_size=64):
     for i, paths_chunk in enumerate(chunks(vid_file_paths, chunk_size)):
         print('Getting movies formats: %i/%i' % ((i + 1) * chunk_size, count))
         formats.update(_get_formats(paths_chunk))
-    print time.time() - start_time
+    print(time.time() - start_time)
     return formats
