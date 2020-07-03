@@ -8,9 +8,9 @@ __license__ = 'MIT'
 
 
 import os
-import subprocess
-import datetime
 import shlex
+import datetime
+import subprocess
 
 
 def conform_path(font_path):
@@ -243,7 +243,12 @@ def encode(
     print(cmd)
     if os.name == 'nt':
         cmd = shlex.split(cmd)
-    subprocess.call(cmd)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    if proc.returncode != 0:
+        print(out)
+        raise Exception(err)
 
 
 if __name__ == '__main__':
