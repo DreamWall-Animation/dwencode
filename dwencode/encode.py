@@ -152,15 +152,15 @@ def encode(
     # Input
     cmd = ffmpeg_path or 'ffmpeg'
     cmd += ' -framerate %i -start_number %i' % (frame_rate, start)
-    cmd += ' -i %s' % images_path
+    cmd += ' -i "%s"' % images_path
 
     # Overlay inputs:
     if overlay_image:
-        cmd += ' -i %s' % overlay_image['path']
+        cmd += ' -i "%s"' % overlay_image['path']
 
     # Sound
     if sound_path:
-        cmd += ' -i %s' % sound_path
+        cmd += ' -i "%s"' % sound_path
     else:
         # Add empty sound in case of concatenate with "-c:a copy"
         cmd += ' -f lavfi -i anullsrc=cl=stereo:r=48000'
@@ -237,7 +237,7 @@ def encode(
     # Output
     if overwrite:
         cmd += ' -y'
-    cmd += ' ' + output_path
+    cmd += ' "%s"' % output_path
 
     # Launch ffmpeg
     print(cmd)
