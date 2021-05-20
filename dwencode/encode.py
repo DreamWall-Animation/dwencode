@@ -132,6 +132,8 @@ def encode(
         rectangles=None,
         video_codec=None,
         audio_codec=None,
+        add_silent_audio=False,
+        silence_settings=None,
         ffmpeg_path=None,
         metadata=None,
         overwrite=False):
@@ -161,9 +163,10 @@ def encode(
     # Sound
     if sound_path:
         cmd += ' -i "%s"' % sound_path
-    else:
+    elif add_silent_audio:
         # Add empty sound in case of concatenate with "-c:a copy"
-        cmd += ' -f lavfi -i anullsrc=cl=stereo:r=48000'
+        silence_settings = silence_settings or 'anullsrc=cl=mono:r=48000'
+        cmd += ' -f lavfi -i ' + silence_settings
 
     # Start filter complex
     filter_complex = []
@@ -224,15 +227,13 @@ def encode(
         cmd += video_codec
 
     # Sound
-    if sound_path:
-        if not audio_codec:
-            cmd += ' -c:a copy'
-        else:
-            if not audio_codec.startswith(' '):
-                audio_codec = ' ' + audio_codec
-            cmd += audio_codec
+    if audio_codec and sound_path:
+        cmd += ' -c:a ' + audio_codec
     else:
-        cmd += ' -c:a pcm_s16le'  # to encode silent track
+        if sound_path:
+            cmd += ' -c:a copy'
+        if add_silent_audio:
+            cmd += ' -c:a pcm_s16le'
 
     # Output
     if overwrite:
