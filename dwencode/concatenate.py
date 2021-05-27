@@ -9,12 +9,12 @@ import subprocess as sp
 
 
 def concatenate_videos(
-        paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True):
+        paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
+        ffmpeg_codec='-vcodec copy -c:a copy'):
     """
     Movies are expected to have:
     - a common parent directory
     - same format
-    - same codec
     """
     # Get common directory:
     paths = [os.path.normpath(p).replace('\\', '/') for p in paths]
@@ -35,8 +35,8 @@ def concatenate_videos(
 
     # FFmpeg command:
     try:
-        cmd = '%s -f concat -safe 0 -i %s -vcodec copy -c:a copy %s' % (
-            ffmpeg_path or 'ffmpeg', list_path, output_path)
+        cmd = '%s -f concat -safe 0 -i %s %s %s' % (
+            ffmpeg_path or 'ffmpeg', list_path, ffmpeg_codec, output_path)
         print(cmd)
         cmd = shlex.split(cmd)
         workdir = os.path.dirname(list_path)
