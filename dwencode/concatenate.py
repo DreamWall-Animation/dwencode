@@ -23,6 +23,8 @@ def concatenate_videos(
         raise Exception('Videos need to be on the same disk.')
     if not os.path.isdir(root):
         root = os.path.dirname(root)
+    if root.endswith('/'):
+        root = root[:-1]
 
     # Create file list of relative paths for ffmpeg
     rel_paths = '\n'.join(['file ' + p.replace(root, '.') for p in paths])
