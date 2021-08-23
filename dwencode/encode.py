@@ -111,6 +111,7 @@ def encode(
         end=None,
         frame_rate=None,
         sound_path=None,
+        sound_offset=None,
         source_width=None,
         source_height=None,
         target_width=None,
@@ -162,6 +163,8 @@ def encode(
 
     # Sound
     if sound_path:
+        if sound_offset:
+            cmd += ' -itsoffset %f' % sound_offset
         cmd += ' -i "%s"' % sound_path
     elif add_silent_audio:
         # Add empty sound in case of concatenate with "-c:a copy"

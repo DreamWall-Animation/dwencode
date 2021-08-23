@@ -17,6 +17,7 @@ parser.add_argument('-e', '--end', type=int)
 parser.add_argument('-fps', '--framerate', type=int)
 
 parser.add_argument('-a', '--sound-path', type=int)
+parser.add_argument('-ao', '--sound-offset', type=float)
 
 parser.add_argument('-sw', '--source-width', type=int)
 parser.add_argument('-sh', '--source-height', type=int)
@@ -47,6 +48,8 @@ parser.add_argument(
 
 parser.add_argument('-c:v', '--video-codec')
 parser.add_argument('-c:a', '--audio-codec')
+parser.add_argument('-as', '--add-silent-audio')
+parser.add_argument('-ss', '--silence_settings')
 
 parser.add_argument('-m', '--metadata', action='append', help='key:value')
 
@@ -108,6 +111,7 @@ encode.encode(
     frame_rate=args.framerate,
 
     sound_path=args.sound_path,
+    sound_offset=args.sound_offset,
 
     source_width=args.source_width,
     source_height=args.source_height,
@@ -134,6 +138,8 @@ encode.encode(
 
     video_codec=args.video_codec,
     audio_codec=args.audio_codec,
+    add_silent_audio=args.add_silent_audio,
+    silence_settings=args.silence_settings,
 
     ffmpeg_path=args.ffmpeg_path,
 
