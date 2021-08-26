@@ -32,18 +32,20 @@ def _create_list_file(paths, root, index=0):
     return list_path
 
 
-def get_input_args(paths):
+def get_input_args(paths, stack_orientation='horizontal'):
     input_pattern = '-f concat -safe 0 -i %s '
     if isinstance(paths[0], list):
         common_root = _get_common_root(
             [path for sublist in paths for path in sublist])
         args = ' '
         lists_paths = []
-        for stack in paths:
-            list_path = _create_list_file(stack, common_root)
+        for i, stack in enumerate(paths):
+            list_path = _create_list_file(stack, common_root, i)
             lists_paths.append(list_path)
             args += input_pattern % list_path
-        args += '-filter_complex hstack '
+        stackarg = dict(
+            horizontal='hstack', vertical='vstack')[stack_orientation]
+        args += '-filter_complex %s ' % stackarg
         return lists_paths, args, common_root
     else:
         common_root = _get_common_root(paths)
@@ -54,7 +56,7 @@ def get_input_args(paths):
 
 def concatenate_videos(
         paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
-        ffmpeg_codec='-vcodec copy -c:a copy'):
+        ffmpeg_codec='-vcodec copy -c:a copy', stack_orientation='horizontal'):
     """
     Movies are expected to have:
     - a common parent directory
@@ -63,7 +65,8 @@ def concatenate_videos(
     it will encode them side by side.
     """
     ffmpeg = ffmpeg_path or 'ffmpeg'
-    list_paths, input_args, common_root = get_input_args(paths)
+    list_paths, input_args, common_root = get_input_args(
+        paths, stack_orientation)
     cmd = '%s %s %s %s' % (ffmpeg, input_args, ffmpeg_codec, output_path)
     print(cmd)
     cmd = shlex.split(cmd)
@@ -82,16 +85,3 @@ def concatenate_videos(
         if delete_list:
             for list_path in list_paths:
                 os.remove(list_path)
-
-
-def _test():
-    paths1 = [
-        'D:/_tmp/_concat_side-by-side/BDG204__SH002__animation__v016.mov',
-        'D:/_tmp/_concat_side-by-side/BDG204__SH003__animation__v042.mov',
-    ]
-    paths2 = [
-        'D:/_tmp/_concat_side-by-side/BDG204__SH002__layout__v009.mov',
-        'D:/_tmp/_concat_side-by-side/BDG204__SH003__layout__v007.mov',
-    ]
-    concatenate_videos(
-        [paths1, paths2], 'D:/_tmp/_concat_side-by-side/out.mp4')
