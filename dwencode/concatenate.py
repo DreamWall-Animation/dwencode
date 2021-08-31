@@ -32,7 +32,7 @@ def _create_list_file(paths, root, index=0):
     return list_path
 
 
-def get_input_args(paths, stack_orientation='horizontal'):
+def _get_input_args(paths, stack_orientation='horizontal'):
     input_pattern = '-f concat -safe 0 -i %s '
     if isinstance(paths[0], list):
         common_root = _get_common_root(
@@ -43,9 +43,21 @@ def get_input_args(paths, stack_orientation='horizontal'):
             list_path = _create_list_file(stack, common_root, i)
             lists_paths.append(list_path)
             args += input_pattern % list_path
-        stackarg = dict(
-            horizontal='hstack', vertical='vstack')[stack_orientation]
-        args += '-filter_complex %s ' % stackarg
+        if stack_orientation in ('horizontal', 0):
+            # stackarg = 'hstack'  # not working with movies of different sizes
+            stackarg = (
+                "color=d=0.1[c];[c][0]scale2ref[c][v1];"
+                "[c][1]scale2ref='w=main_w+iw:h=max(main_h,ih)'[c][v2];"
+                "[c][v1]overlay=0:0[ol-vid1];"
+                "[ol-vid1][v2]overlay=W-w:0,setsar=1")
+        else:
+            # stackarg = 'vstack'  # not working with movies of different sizes
+            stackarg = (
+                "color=d=0.1[c];[c][0]scale2ref[c][v1];"
+                "[c][1]scale2ref='w=max(main_w,iw):h=main_h+ih'[c][v2];"
+                "[c][v1]overlay=0:0[ol-vid1];"
+                "[ol-vid1][v2]overlay=0:H-h,setsar=1")
+        args += '-filter_complex "%s" ' % stackarg
         return lists_paths, args, common_root
     else:
         common_root = _get_common_root(paths)
@@ -61,11 +73,12 @@ def concatenate_videos(
     Movies are expected to have:
     - a common parent directory
     - same format
-    @paths argument can be a list or a list of lists. If there multiple lists,
-    it will encode them side by side.
+    @paths argument can be a list or a list of lists. If there is multiple
+    lists, it will encode them side by side (or on top of each other,
+    depending on the @stack_orientation argument).
     """
     ffmpeg = ffmpeg_path or 'ffmpeg'
-    list_paths, input_args, common_root = get_input_args(
+    list_paths, input_args, common_root = _get_input_args(
         paths, stack_orientation)
     cmd = '%s %s %s %s' % (ffmpeg, input_args, ffmpeg_codec, output_path)
     print(cmd)
