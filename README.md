@@ -1,5 +1,7 @@
 # dwencode
-FFmpeg python wrapper to encode image sequence to movie with overlay text.
+FFmpeg python wrapper to:
+* encode image sequence to movie with overlay text.
+* concatenate videos, including side-by-side/stacked concatenation for comparing multiple videos.
 
 ## Example:
 
