@@ -8,6 +8,11 @@ import shlex
 import subprocess as sp
 
 
+DEFAULT_CONCAT_ENCODING = '-vcodec copy -c:a copy'
+DEFAULT_CONCAT_STACK_ENCODING = (
+    '-c:v libx264 -crf 26 -preset fast -tune animation -c:a aac -b:a 128k')
+
+
 def _get_common_root(paths):
     paths = [os.path.normpath(p).replace('\\', '/') for p in paths]
     root = os.path.commonprefix(paths)
@@ -83,7 +88,7 @@ def _get_input_args(
 
 def concatenate_videos(
         paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
-        ffmpeg_codec='-vcodec copy -c:a copy', overwrite=False,
+        ffmpeg_codec=DEFAULT_CONCAT_ENCODING, overwrite=False,
         stack_orientation='horizontal', stack_master_list=0):
     """
     Movies are expected to have:
@@ -101,6 +106,10 @@ def concatenate_videos(
     list_paths, input_args, common_root = _get_input_args(
         paths, stack_orientation, stack_master_list)
     overwrite = '-y' if overwrite else ''
+    if isinstance(paths[0], list):  # if we have a stack setup...
+        if ffmpeg_codec == DEFAULT_CONCAT_ENCODING:
+            # => obviously cannot stream copy
+            ffmpeg_codec = DEFAULT_CONCAT_STACK_ENCODING
     cmd = '%s %s %s %s %s' % (
         ffmpeg, input_args, ffmpeg_codec, overwrite, output_path)
     print(cmd)
