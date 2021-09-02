@@ -2,7 +2,6 @@ import time
 import subprocess as sp
 import json
 import six
-import quicktime
 
 
 def probe(vid_file_path):
@@ -20,15 +19,6 @@ def probe(vid_file_path):
     if not six.PY2:
         out = out.decode('ascii')
     return json.loads(out)
-
-
-def get_duration(vid_file_path):
-    if vid_file_path.endswith('.mov'):
-        return quicktime.get_duration(vid_file_path)
-    else:
-        data = probe(vid_file_path)
-        vid_stream = [s for s in data['streams'] if 'nb_frames' in s][0]
-        return int(vid_stream['nb_frames'])
 
 
 def get_format(vid_file_path):
@@ -59,7 +49,7 @@ def _get_formats(vid_file_paths):
     return formats
 
 
-def chunks(list_, chunk_size):
+def _chunks(list_, chunk_size):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(list_), chunk_size):
         yield list_[i:i + chunk_size]
@@ -71,7 +61,7 @@ def get_formats(vid_file_paths, chunk_size=64):
     start_time = time.time()
     formats = dict()
     count = len(vid_file_paths)
-    for i, paths_chunk in enumerate(chunks(vid_file_paths, chunk_size)):
+    for i, paths_chunk in enumerate(_chunks(vid_file_paths, chunk_size)):
         print('Getting movies formats: %i/%i' % ((i + 1) * chunk_size, count))
         formats.update(_get_formats(paths_chunk))
     print(time.time() - start_time)

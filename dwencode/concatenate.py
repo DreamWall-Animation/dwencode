@@ -20,15 +20,28 @@ def _get_common_root(paths):
     return root
 
 
-def _create_list_file(paths, root, index=0):
-    rel_paths = '\n'.join(['file ' + p.replace(root, '.') for p in paths])
+def _get_videos_durations(paths):
+    from dwencode.probe import get_duration
+    return [get_duration(p) for p in paths]
+
+
+def _create_list_file(paths, root, index=0, timings=None):
+    concat_list = []
+    for i, path in enumerate(paths):
+        concat_list.append('file %s' % path.replace(root, '.'))
+        if timings:
+            timing = timings[i]
+            concat_list.extend(
+                ['duration %s' % timing, 'outpoint %s' % timing])
+    concat_list = '\n'.join(concat_list)
+    print(concat_list)
     list_path = os.path.join(
         root, 'temp_video_concatenation_list_%i.txt' % index).replace(
             '\\', '/')
     if os.path.exists(list_path):
         os.remove(list_path)
     with open(list_path, 'w') as f:
-        f.write(rel_paths)
+        f.write(concat_list)
     return list_path
 
 
@@ -40,7 +53,9 @@ def _get_input_args(paths, stack_orientation='horizontal'):
         args = ' '
         lists_paths = []
         for i, stack in enumerate(paths):
-            list_path = _create_list_file(stack, common_root, i)
+            if i == 0:
+                timings = _get_videos_durations(stack)
+            list_path = _create_list_file(stack, common_root, i, timings)
             lists_paths.append(list_path)
             args += input_pattern % list_path
         if stack_orientation in ('horizontal', 0):

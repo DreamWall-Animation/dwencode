@@ -337,9 +337,12 @@ class Mov(object):
         print("Done!")
 
 
-def get_mov_duration(mov_path, framerate=25):
+def get_mov_duration(mov_path, frames=False, framerate=25.0):
+    # FIXME: get framerate from movie
     m = Mov(mov_path)
     m.parse()
     duration = (
-        m.metadata['duration'] / float(m.metadata['time scale']) * framerate)
-    return int(round(duration))
+        m.metadata['duration'] / float(m.metadata['time scale']))
+    if frames:
+        duration = int(round(duration * framerate))
+    return duration
