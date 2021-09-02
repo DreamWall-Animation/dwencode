@@ -83,8 +83,8 @@ def _get_input_args(
 
 def concatenate_videos(
         paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
-        ffmpeg_codec='-vcodec copy -c:a copy', stack_orientation='horizontal',
-        stack_master_list=0):
+        ffmpeg_codec='-vcodec copy -c:a copy', overwrite=False,
+        stack_orientation='horizontal', stack_master_list=0):
     """
     Movies are expected to have:
     - a common parent directory
@@ -100,7 +100,9 @@ def concatenate_videos(
     ffmpeg = ffmpeg_path or 'ffmpeg'
     list_paths, input_args, common_root = _get_input_args(
         paths, stack_orientation, stack_master_list)
-    cmd = '%s %s %s %s' % (ffmpeg, input_args, ffmpeg_codec, output_path)
+    overwrite = '-y' if overwrite else ''
+    cmd = '%s %s %s %s %s' % (
+        ffmpeg, input_args, ffmpeg_codec, overwrite, output_path)
     print(cmd)
     cmd = shlex.split(cmd)
     try:
