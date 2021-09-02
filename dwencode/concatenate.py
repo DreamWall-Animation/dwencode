@@ -45,16 +45,16 @@ def _create_list_file(paths, root, index=0, timings=None):
     return list_path
 
 
-def _get_input_args(paths, stack_orientation='horizontal'):
+def _get_input_args(
+        paths, stack_orientation='horizontal', master_list_index=0):
     input_pattern = '-f concat -safe 0 -i %s '
     if isinstance(paths[0], list):
         common_root = _get_common_root(
             [path for sublist in paths for path in sublist])
         args = ' '
         lists_paths = []
+        timings = _get_videos_durations(paths[master_list_index])
         for i, stack in enumerate(paths):
-            if i == 0:
-                timings = _get_videos_durations(stack)
             list_path = _create_list_file(stack, common_root, i, timings)
             lists_paths.append(list_path)
             args += input_pattern % list_path
@@ -83,18 +83,23 @@ def _get_input_args(paths, stack_orientation='horizontal'):
 
 def concatenate_videos(
         paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
-        ffmpeg_codec='-vcodec copy -c:a copy', stack_orientation='horizontal'):
+        ffmpeg_codec='-vcodec copy -c:a copy', stack_orientation='horizontal',
+        stack_master_list=0):
     """
     Movies are expected to have:
     - a common parent directory
     - same format
+
     @paths argument can be a list or a list of lists. If there is multiple
     lists, it will encode them side by side (or on top of each other,
     depending on the @stack_orientation argument).
+
+    @stack_master_list is the index of the list which will drive the timing
+    of the concatenation.
     """
     ffmpeg = ffmpeg_path or 'ffmpeg'
     list_paths, input_args, common_root = _get_input_args(
-        paths, stack_orientation)
+        paths, stack_orientation, stack_master_list)
     cmd = '%s %s %s %s' % (ffmpeg, input_args, ffmpeg_codec, output_path)
     print(cmd)
     cmd = shlex.split(cmd)
