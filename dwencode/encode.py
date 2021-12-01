@@ -47,10 +47,15 @@ def get_padding_values(width, height, target_width, target_height):
     return image_width, x_offset, y_offset
 
 
-def drawtext(text, x, y, color, font_path=None, size=36, start=None, end=None):
+def drawtext(
+        text, x, y, color=None, font_path=None, size=36, start=None, end=None):
+    if not text:
+        return ''
+    if not color:
+        color = '#000000'
     if text == '{framerange}':
         print(9, color)
-        return draw_framerange(text, x, y, color, font_path, size, start, end)
+        return draw_framerange(x, y, color, font_path, size, start, end)
     color = color or 'white'
     text = text.replace(':', r'\:')
     text = text.replace('{frame}', '%{frame_num}')
@@ -70,7 +75,7 @@ def drawtext(text, x, y, color, font_path=None, size=36, start=None, end=None):
 
 
 def draw_framerange(
-        text, x, y, color, font_path=None, size=36, start=None, end=None):
+        x, y, color, font_path=None, size=36, start=None, end=None):
     # framerange is made of two separate texts:
     left_text, right_text = '{frame}', '[%i-%i]' % (start, end)
     x = str(x)
@@ -139,8 +144,65 @@ def encode(
         metadata=None,
         overwrite=False):
     """
-    Encode images to movie with text overlays (using ffmpeg).
+    Encode images to movie with text overlays (using FFmpeg).
+
+    - images_path (str) Use patterns such as "/path/to/image.%04d.jpg"
+    - output_path (str) With any FFmpeg supported extensions
+    - start (int) First frame. Default is 0
+    - end (int) Last frame
+    - frame_rate (float) Default is 24
+    - sound_path (str) Optional
+    - sound_offset (float) Default is 0
+    - source_width (int) Optional if you have Pillow (PIL)
+    - source_height (int) Optional if you have Pillow (PIL)
+    - target_width (str) Different ratio than source will add black bars.
+    - target_height (str) Different ratio than source will add black bars.
+    - top_left (str) Text to display
+    - top_middle (str) Text to display
+    - top_right (str) Text to display
+    - bottom_left (str) Text to display
+    - bottom_middle (str) Text to display
+    - bottom_right (str) Text to display
+    - top_left_color (str) Text color. Format: #RRGGBB
+    - top_middle_color (str) Text color. Format: #RRGGBB
+    - top_right_color (str) Text color. Format: #RRGGBB
+    - bottom_left_color (str) Text color. Format: #RRGGBB
+    - bottom_middle_color (str) Text color. Format: #RRGGBB
+    - bottom_right_color (str) Text color. Format: #RRGGBB
+    - font_path (str) FFmpeg supported font for all texts
+    - overlay_image (dict) needs {path, x, y}
+    - rectangles (dicts) need {x,y,width,height,color,opacity,thickness}
+    - video_codec (str) FFmpeg video codec arguments
+    - audio_codec (str) FFmpeg audio codec arguments
+    - add_silent_audio (str) add silent audio if no audio is provided
+    - silence_settings (str) FFmpeg sound codec settings
+    - ffmpeg_path (str) Default: searches for 'ffmpeg' in PATH env
+    - metadata (str) Movie metadata
+    - overwrite (str) Default is False
+
+    You can use the following text expressions:
+    - {frame}: current frame
+    - {framerange}: current frame + first and last frame.
+        e.g. `130 [40-153]`
+    - {datetime}: date in YYYY/MM/DD HH:MM format.
+
+    The default codec is `mjpeg` with `-q:v 3` and can be used with `.mov`
+    container.
+
+    Image ratio is preserved. Input a different target ratio to add black bars.
+
+    Font size is automatically adapted to target size.
     """
+    # Check ffmpeg is found:
+    if ffmpeg_path:
+        if not os.path.exists(ffmpeg_path):
+            raise Exception('"%s" does not exist.' % ffmpeg_path)
+    else:
+        try:
+            subprocess.check_call('ffmpeg -version')
+        except subprocess.CalledProcessError:
+            raise Exception('FFmpeg not found.')
+
     frame_rate = frame_rate or 24
     start = start or 0
 
@@ -157,7 +219,7 @@ def encode(
     cmd += ' -framerate %i -start_number %i' % (frame_rate, start)
     cmd += ' -i "%s"' % images_path
 
-    # Overlay inputs:
+    # Overlay inputs
     if overlay_image:
         cmd += ' -i "%s"' % overlay_image['path']
 
