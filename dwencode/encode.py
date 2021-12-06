@@ -51,8 +51,6 @@ def drawtext(
         text, x, y, color=None, font_path=None, size=36, start=None, end=None):
     if not text:
         return ''
-    if not color:
-        color = '#FFFFFF'
     if text == '{framerange}':
         print(9, color)
         return draw_framerange(x, y, color, font_path, size, start, end)
