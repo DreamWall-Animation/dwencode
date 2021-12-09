@@ -49,8 +49,6 @@ def get_padding_values(width, height, target_width, target_height):
 
 def drawtext(
         text, x, y, color=None, font_path=None, size=36, start=None, end=None):
-    if not text:
-        return ''
     if text == '{framerange}':
         print(9, color)
         return draw_framerange(x, y, color, font_path, size, start, end)
@@ -252,19 +250,19 @@ def encode(
     bottom_pos = target_height - font_size - margin_size
     middle_pos = '(w-tw)/2'
 
-    args = dict(font_path=font_path, size=font_size, start=start, end=end)
-    filter_complex.append(drawtext(
-        top_left, left_pos, top_pos, top_left_color, **args))
-    filter_complex.append(drawtext(
-        top_middle, middle_pos, top_pos, top_middle_color, **args))
-    filter_complex.append(drawtext(
-        top_right, right_pos, top_pos, top_right_color, **args))
-    filter_complex.append(drawtext(
-        bottom_left, top_pos, bottom_pos, bottom_left_color, **args))
-    filter_complex.append(drawtext(
-        bottom_middle, middle_pos, bottom_pos, bottom_middle_color, **args))
-    filter_complex.append(drawtext(
-        bottom_right, right_pos, bottom_pos, bottom_right_color, **args))
+    kwargs = dict(font_path=font_path, size=font_size, start=start, end=end)
+    filters_args = (
+        (top_left, left_pos, top_pos, top_left_color),
+        (top_middle, middle_pos, top_pos, top_middle_color),
+        (top_right, right_pos, top_pos, top_right_color),
+        (bottom_left, top_pos, bottom_pos, bottom_left_color),
+        (bottom_middle, middle_pos, bottom_pos, bottom_middle_color),
+        (bottom_right, right_pos, bottom_pos, bottom_right_color))
+
+    for text, left, top, color in filters_args:
+        if not text:
+            continue
+        filter_complex.append(drawtext(text, left, top, color, **kwargs))
 
     # Add boxes (rectangles/safe-frames)
     for rectangle in rectangles or []:
