@@ -2,18 +2,21 @@ import time
 import subprocess as sp
 import json
 import six
+from dwencode.ffpath import get_ffprobe_path
 
 
-def probe(vid_file_path):
-    '''
+def probe(vid_file_path, ffprobe_path=None):
+    """
     From https://stackoverflow.com/a/36743499/1442895
     Give a json from ffprobe command line
     @vid_file_path : The absolute (full) path of the video file, string.
-    '''
+    """
+    ffprobe_path = get_ffprobe_path(ffprobe_path)
+    print(ffprobe_path)
     command = [
-        "ffprobe", "-loglevel", "quiet", "-print_format", "json",
+        ffprobe_path, "-loglevel", "quiet", "-print_format", "json",
         "-show_format", "-show_streams", vid_file_path]
-    shell = True if six.PY2 else False
+    shell = bool(six.PY2)
     pipe = sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT, shell=shell)
     out = pipe.communicate()[0]
     if not six.PY2:
@@ -21,17 +24,18 @@ def probe(vid_file_path):
     return json.loads(out)
 
 
-def get_format(vid_file_path):
-    data = probe(vid_file_path)
+def get_format(vid_file_path, ffprobe_path=None):
+    ffprobe_path = get_ffprobe_path(ffprobe_path)
+    data = probe(vid_file_path, ffprobe_path)
     vid_stream = [s for s in data['streams'] if 'coded_width' in s][0]
     return vid_stream['coded_width'], vid_stream['coded_height']
 
 
-def _get_formats(vid_file_paths):
+def _get_formats(vid_file_paths, ffprobe_path):
     processes = dict()
     for path in vid_file_paths:
         command = [
-            "ffprobe", "-loglevel", "quiet", "-print_format", "json",
+            ffprobe_path, "-loglevel", "quiet", "-print_format", "json",
             "-show_format", "-show_streams", path]
         p = sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
         processes[path] = p
@@ -55,14 +59,15 @@ def _chunks(list_, chunk_size):
         yield list_[i:i + chunk_size]
 
 
-def get_formats(vid_file_paths, chunk_size=64):
+def get_formats(vid_file_paths, chunk_size=64, ffprobe_path=None):
     # Cannot open infinite number of files at the same time, so cut the list
     # into pieces:
+    ffprobe_path = get_ffprobe_path(ffprobe_path)
     start_time = time.time()
     formats = dict()
     count = len(vid_file_paths)
     for i, paths_chunk in enumerate(_chunks(vid_file_paths, chunk_size)):
         print('Getting movies formats: %i/%i' % ((i + 1) * chunk_size, count))
-        formats.update(_get_formats(paths_chunk))
+        formats.update(_get_formats(paths_chunk, ffprobe_path=ffprobe_path))
     print(time.time() - start_time)
     return formats

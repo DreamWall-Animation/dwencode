@@ -8,9 +8,11 @@ __license__ = 'MIT'
 
 
 import os
-import shlex
 import datetime
+import shlex
 import subprocess
+
+from dwencode.ffpath import get_ffmpeg_path
 
 
 def conform_path(font_path):
@@ -39,7 +41,7 @@ def get_padding_values(width, height, target_width, target_height):
         image_height = round(height * scale)
         x_offset = 0
         y_offset = round((target_height - image_height) / 2)
-    elif scale_x > scale_y:
+    else:
         # black bars on the side instead of top/bottom:
         image_width = round(width * scale)
         x_offset = round((target_width - image_width) / 2)
@@ -190,14 +192,7 @@ def encode(
     Font size is automatically adapted to target size.
     """
     # Check ffmpeg is found:
-    if ffmpeg_path:
-        if not os.path.exists(ffmpeg_path):
-            raise Exception('"%s" does not exist.' % ffmpeg_path)
-    else:
-        try:
-            subprocess.check_call('ffmpeg -version')
-        except subprocess.CalledProcessError:
-            raise Exception('FFmpeg not found.')
+    ffmpeg_path = get_ffmpeg_path(ffmpeg_path)
 
     frame_rate = frame_rate or 24
     start = start or 0

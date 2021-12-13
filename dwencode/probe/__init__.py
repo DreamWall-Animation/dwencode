@@ -1,6 +1,7 @@
 from dwencode.probe.ffprobe import *
 from dwencode.probe import quicktime
 
+
 try:
     import cv2
 except ImportError:
@@ -23,4 +24,4 @@ def get_duration(video_path, frames=False):
         if frames:
             return int(vid_stream['nb_frames'])
         else:
-            return int(vid_stream['duration'])
+            return int(float(vid_stream['duration']))

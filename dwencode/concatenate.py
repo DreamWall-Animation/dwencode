@@ -6,11 +6,17 @@ __license__ = 'MIT'
 import os
 import shlex
 import subprocess as sp
+from dwencode.ffpath import get_ffmpeg_path
 
 
 DEFAULT_CONCAT_ENCODING = '-vcodec copy -c:a copy'
 DEFAULT_CONCAT_STACK_ENCODING = (
     '-c:v libx264 -crf 26 -preset fast -tune animation -c:a aac -b:a 128k')
+STACKED_ARGS = (
+    "color=d=0.1[c];[c][0]scale2ref[c][v1];"
+    "[c][1]scale2ref='{scale2ref}'[c][v2];"
+    "[c][v1]overlay=0:0[ol-vid1];"
+    "[ol-vid1][v2]overlay={overlay},setsar=1")
 
 
 def _get_common_root(paths):
@@ -43,48 +49,41 @@ def _create_list_file(paths, root, index=0, timings=None):
     list_path = os.path.join(
         root, 'temp_video_concatenation_list_%i.txt' % index).replace(
             '\\', '/')
+
     if os.path.exists(list_path):
         os.remove(list_path)
     with open(list_path, 'w') as f:
         f.write(concat_list)
+
     return list_path
 
 
 def _get_input_args(
         paths, stack_orientation='horizontal', master_list_index=0):
     input_pattern = '-f concat -safe 0 -i %s '
-    if isinstance(paths[0], list):
-        common_root = _get_common_root(
-            [path for sublist in paths for path in sublist])
-        args = ' '
-        lists_paths = []
-        timings = _get_videos_durations(paths[master_list_index])
-        for i, stack in enumerate(paths):
-            list_path = _create_list_file(stack, common_root, i, timings)
-            lists_paths.append(list_path)
-            args += input_pattern % list_path
-        if stack_orientation in ('horizontal', 0):
-            # stackarg = 'hstack'  # not working with movies of different sizes
-            stackarg = (
-                "color=d=0.1[c];[c][0]scale2ref[c][v1];"
-                "[c][1]scale2ref='w=main_w+iw:h=max(main_h,ih)'[c][v2];"
-                "[c][v1]overlay=0:0[ol-vid1];"
-                "[ol-vid1][v2]overlay=W-w:0,setsar=1")
-        else:
-            # stackarg = 'vstack'  # not working with movies of different sizes
-            stackarg = (
-                "color=d=0.1[c];[c][0]scale2ref[c][v1];"
-                "[c][1]scale2ref='w=max(main_w,iw):h=main_h+ih'[c][v2];"
-                "[c][v1]overlay=0:0[ol-vid1];"
-                "[ol-vid1][v2]overlay=0:H-h,setsar=1")
-        args += '-filter_complex "%s" ' % stackarg
-        return lists_paths, args, common_root
-    else:
+    if not isinstance(paths[0], list):
         common_root = _get_common_root(paths)
         list_path = _create_list_file(paths, common_root)
         args = input_pattern % list_path
         return [list_path], args, common_root
-
+    common_root = _get_common_root(
+        [path for sublist in paths for path in sublist])
+    args = ' '
+    lists_paths = []
+    timings = _get_videos_durations(paths[master_list_index])
+    for i, stack in enumerate(paths):
+        list_path = _create_list_file(stack, common_root, i, timings)
+        lists_paths.append(list_path)
+        args += input_pattern % list_path
+    if stack_orientation in ('horizontal', 0):
+        scale2ref = "w=main_w+iw:h=max(main_h,ih)"
+        overlay = "W-w:0"
+    else:
+        scale2ref = "w=max(main_w,iw):h=main_h+ih"
+        overlay = "0:H-h"
+    stackarg = STACKED_ARGS.format(scale2ref=scale2ref, overlay=overlay)
+    args += '-filter_complex "%s" ' % stackarg
+    return lists_paths, args, common_root
 
 def concatenate_videos(
         paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
@@ -102,18 +101,21 @@ def concatenate_videos(
     @stack_master_list is the index of the list which will drive the timing
     of the concatenation.
     """
-    ffmpeg = ffmpeg_path or 'ffmpeg'
+    ffmpeg = get_ffmpeg_path(ffmpeg_path)
     list_paths, input_args, common_root = _get_input_args(
         paths, stack_orientation, stack_master_list)
     overwrite = '-y' if overwrite else ''
-    if isinstance(paths[0], list):  # if we have a stack setup...
-        if ffmpeg_codec == DEFAULT_CONCAT_ENCODING:
-            # => obviously cannot stream copy
-            ffmpeg_codec = DEFAULT_CONCAT_STACK_ENCODING
+
+    if isinstance(paths[0], list) and ffmpeg_codec == DEFAULT_CONCAT_ENCODING:
+        # => obviously cannot stream copy
+        ffmpeg_codec = DEFAULT_CONCAT_STACK_ENCODING
+
     cmd = '%s %s %s %s %s' % (
         ffmpeg, input_args, ffmpeg_codec, overwrite, output_path)
+
     print(cmd)
     cmd = shlex.split(cmd)
+
     try:
         if verbose:
             proc = sp.Popen(
