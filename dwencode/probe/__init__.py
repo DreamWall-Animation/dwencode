@@ -23,5 +23,4 @@ def get_duration(video_path, frames=False):
         vid_stream = [s for s in data['streams'] if 'nb_frames' in s][0]
         if frames:
             return int(vid_stream['nb_frames'])
-        else:
-            return int(float(vid_stream['duration']))
+        return float(vid_stream['duration'])
