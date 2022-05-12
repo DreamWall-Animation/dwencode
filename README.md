@@ -66,7 +66,7 @@ python c:\path\to\dwencode\dwencode ^
 ```
 
 ## Documentation:
-The default codec is `mjpeg` with `-q:v 3` and can be used with `.mov` container.
+The default codec is `libx264` and can be used with `.mov` container.
 
 Image ratio is preserved. Input a different target ratio to add `black bars`.\
 `Font size` is automatically adapted to target size.

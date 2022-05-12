@@ -184,7 +184,7 @@ def encode(
         e.g. `130 [40-153]`
     - {datetime}: date in YYYY/MM/DD HH:MM format.
 
-    The default codec is `mjpeg` with `-q:v 3` and can be used with `.mov`
+    The default codec is `libx264` and can be used with `.mov`
     container.
 
     Image ratio is preserved. Input a different target ratio to add black bars.
