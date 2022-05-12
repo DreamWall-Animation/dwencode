@@ -276,7 +276,7 @@ def encode(
 
     # Video codec
     if not video_codec:
-        cmd += ' -pix_fmt yuvj420p -vcodec mjpeg -q:v 3'
+        cmd += ' -vcodec libx264'
     else:
         if not video_codec.startswith(' '):
             video_codec = ' ' + video_codec
