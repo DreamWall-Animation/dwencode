@@ -33,7 +33,14 @@ def _get_common_root(paths):
 
 def _get_videos_durations(paths):
     from dwencode.probe import get_duration
-    return [get_duration(p) for p in paths]
+    durations = []
+    for path in paths:
+        try:
+            durations.append(get_duration(path))
+        except ValueError:
+            print('ERROR: Could not get duration of %s' % path)
+            raise
+    return durations
 
 
 def _create_list_file(paths, root, index=0, timings=None):

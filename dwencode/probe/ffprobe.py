@@ -1,7 +1,8 @@
-import time
-import subprocess as sp
-import json
+import os
 import six
+import time
+import json
+import subprocess as sp
 from dwencode.ffpath import get_ffprobe_path
 
 
@@ -17,11 +18,17 @@ def probe(vid_file_path, ffprobe_path=None):
         ffprobe_path, "-loglevel", "quiet", "-print_format", "json",
         "-show_format", "-show_streams", vid_file_path]
     shell = bool(six.PY2)
-    pipe = sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT, shell=shell)
+    pipe = sp.Popen(
+        command, stdout=sp.PIPE, stderr=sp.STDOUT, shell=shell,
+        cwd=os.path.expanduser('~'))  # fix for Windows msg about UNC paths
     out = pipe.communicate()[0]
     if not six.PY2:
         out = out.decode('ascii')
-    return json.loads(out)
+    try:
+        return json.loads(out)
+    except ValueError:
+        print('Could not load output as json: \n%s' % out)
+        raise
 
 
 def get_format(vid_file_path, ffprobe_path=None):
