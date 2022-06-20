@@ -92,6 +92,7 @@ def _get_input_args(
     args += '-filter_complex "%s" ' % stackarg
     return lists_paths, args, common_root
 
+
 def concatenate_videos(
         paths, output_path, verbose=False, ffmpeg_path=None, delete_list=True,
         ffmpeg_codec=DEFAULT_CONCAT_ENCODING, overwrite=False,
