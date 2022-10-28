@@ -285,7 +285,7 @@ def encode(
 
     # Sound
     if audio_codec and sound_path:
-        cmd += audio_codec
+        cmd += ' ' + audio_codec
     else:
         if sound_path:
             cmd += ' -c:a copy'
