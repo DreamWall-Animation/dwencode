@@ -139,7 +139,7 @@ python dwencode input.####.jpg output.mov
 
 -tlc,  --top-left-color
 -tmc,  --top-middle-color=COLOR
--trc,  --top-right-color=COLOR       colors in RRGGBB format
+-trc,  --top-right-color=COLOR       colors in RRGGBB@A format
 -blc,  --bottom-left-color=COLOR
 -bmc,  --bottom-middle-color=COLOR
 -brc,  --bottom-right-color=COLOR

@@ -162,12 +162,12 @@ def encode(
     - bottom_left (str) Text to display
     - bottom_middle (str) Text to display
     - bottom_right (str) Text to display
-    - top_left_color (str) Text color. Format: #RRGGBB
-    - top_middle_color (str) Text color. Format: #RRGGBB
-    - top_right_color (str) Text color. Format: #RRGGBB
-    - bottom_left_color (str) Text color. Format: #RRGGBB
-    - bottom_middle_color (str) Text color. Format: #RRGGBB
-    - bottom_right_color (str) Text color. Format: #RRGGBB
+    - top_left_color (str) Text color. Format: #RRGGBB@A
+    - top_middle_color (str) Text color. Format: #RRGGBB@A
+    - top_right_color (str) Text color. Format: #RRGGBB@A
+    - bottom_left_color (str) Text color. Format: #RRGGBB@A
+    - bottom_middle_color (str) Text color. Format: #RRGGBB@A
+    - bottom_right_color (str) Text color. Format: #RRGGBB@A
     - font_path (str) FFmpeg supported font for all texts
     - overlay_image (dict) needs {path, x, y}
     - rectangles (dicts) need {x,y,width,height,color,opacity,thickness}
