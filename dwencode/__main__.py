@@ -39,6 +39,7 @@ parser.add_argument('-bmc', '--bottom-middle-color')
 parser.add_argument('-brc', '--bottom-right-color')
 
 parser.add_argument('-font', '--font-path')
+parser.add_argument('-fs', '--font-scale', type=float, default=1.0)
 
 parser.add_argument('-i', '--overlay-image', help='path-x-y')
 
@@ -132,6 +133,7 @@ encode.encode(
     bottom_right_color=args.bottom_right_color,
 
     font_path=args.font_path,
+    font_scale=args.font_scale,
 
     overlay_image=overlay_image,
     rectangles=rectangles,

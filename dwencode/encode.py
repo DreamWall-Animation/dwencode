@@ -103,7 +103,7 @@ def drawbox(x, y, width, height, color, opacity, thickness):
         x, y, width, height, color, opacity, thickness)
 
 
-def drawimage(path, x, y):
+def imagepos(x, y):
     return '[0:v][1:v]overlay=%i:%i' % (x, y)
 
 
@@ -132,6 +132,7 @@ def encode(
         bottom_middle_color=None,
         bottom_right_color=None,
         font_path=None,
+        font_scale=1.0,
         overlay_image=None,
         rectangles=None,
         video_codec=None,
@@ -229,7 +230,7 @@ def encode(
 
     # Add overlay images
     if overlay_image:
-        filter_complex.append(drawimage(**overlay_image))
+        filter_complex.append(imagepos(overlay_image['x'], overlay_image['y']))
 
     # Scaling and padding
     image_width, x_offset, y_offset = get_padding_values(
@@ -239,7 +240,7 @@ def encode(
         target_width, target_height, x_offset, y_offset))
 
     # Overlay text
-    font_size = round(target_width / 53.0)
+    font_size = round(target_width / 53.0 * font_scale)
     margin_size = left_pos = top_pos = round(target_width / 240.0)
     right_pos = 'w-%i-(tw)' % margin_size
     bottom_pos = target_height - font_size - margin_size
