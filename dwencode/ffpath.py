@@ -17,7 +17,7 @@ def get_ffmpeg_path(ffmpeg_path=None):
         return _ffmpeg_valid_path
     if ffmpeg_path:
         if os.path.isdir(ffmpeg_path):
-            ffmpeg_path = os.path.join(ffmpeg_path, 'ffmpeg.exe')
+            ffmpeg_path += '/ffmpeg.exe'
         if not os.path.exists(ffmpeg_path):
             msg = '"%s" does not exist. Try with "ffmpeg" command.'
             logging.warning(msg % ffmpeg_path)
@@ -44,10 +44,10 @@ def get_ffprobe_path(ffprobe_path=None):
         if ffprobe_path.lower().endswith('ffmpeg.exe'):
             ffprobe_path = os.path.dirname(ffprobe_path)
         if os.path.isdir(ffprobe_path):
-            ffprobe_path = os.path.join(ffprobe_path, 'ffprobe.exe')
+            ffprobe_path += '/ffprobe.exe'
     elif _ffmpeg_valid_path:
         ffprobe_path = os.path.dirname(_ffmpeg_valid_path)
-        ffprobe_path = os.path.join(ffprobe_path, 'ffprobe.exe')
+        ffprobe_path += 'ffprobe.exe'
 
     if ffprobe_path and not os.path.exists(ffprobe_path):
         msg = '"%s" does not exist. Try with "ffprobe" command.'
