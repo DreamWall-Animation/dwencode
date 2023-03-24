@@ -15,6 +15,12 @@ import subprocess
 from dwencode.ffpath import get_ffmpeg_path
 
 
+def extract_image_from_video(video_path, time, output_path, ffmpegpath=None):
+    ffmpeg = get_ffmpeg_path(ffmpeg_path=ffmpegpath)
+    subprocess.check_call(shlex.split(
+        f'{ffmpeg} -ss {time} -i {video_path} -frames:v 1 -y {output_path}'))
+
+
 def conform_path(font_path):
     r"""Unix path with escaped semicolon (e.g. 'C\:/WINDOWS/fonts/font.ttf')"""
     if font_path is None:
