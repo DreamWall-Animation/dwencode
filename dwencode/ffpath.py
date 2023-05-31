@@ -61,4 +61,3 @@ def get_ffprobe_path(ffprobe_path=None):
 
     _ffprobe_valid_path = ffprobe_path
     return _ffprobe_valid_path
-
