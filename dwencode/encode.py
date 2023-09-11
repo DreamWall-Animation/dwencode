@@ -290,13 +290,10 @@ def encode(
         cmd += video_codec
 
     # Sound
-    if audio_codec and sound_path:
+    if audio_codec and (sound_path or add_silent_audio):
         cmd += ' ' + audio_codec
-    else:
-        if sound_path:
-            cmd += ' -c:a copy'
-        if add_silent_audio:
-            cmd += ' -c:a pcm_s16le'
+    elif sound_path:
+        cmd += ' -c:a copy'
 
     # Output
     if overwrite:
