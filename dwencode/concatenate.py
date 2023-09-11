@@ -5,6 +5,7 @@ __license__ = 'MIT'
 
 import os
 import shlex
+import locale
 import subprocess as sp
 from dwencode.ffpath import get_ffmpeg_path
 
@@ -129,7 +130,10 @@ def concatenate_videos(
             proc = sp.Popen(
                 cmd, cwd=common_root, stdout=sp.PIPE, stderr=sp.PIPE)
             out, err = proc.communicate()
+            encoding = locale.getpreferredencoding()
+            out = out.decode(encoding)
             print(out)
+            err = err.decode(encoding)
             print(err)
             if proc.returncode != 0:
                 raise ValueError(err)
