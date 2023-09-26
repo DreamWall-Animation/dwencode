@@ -141,6 +141,7 @@ def encode(
         font_scale=1.0,
         overlay_image=None,
         rectangles=None,
+        input_args=None,
         video_codec=None,
         audio_codec=None,
         add_silent_audio=False,
@@ -215,6 +216,8 @@ def encode(
     # Input
     cmd = ffmpeg_path or 'ffmpeg'
     cmd += ' -framerate %i -start_number %i' % (frame_rate, start)
+    if input_args:
+        cmd += ' %s ' % input_args
     cmd += ' -i "%s"' % images_path
 
     # Overlay inputs
