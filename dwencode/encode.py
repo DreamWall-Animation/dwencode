@@ -215,7 +215,7 @@ def encode(
 
     # Input
     cmd = ffmpeg_path or 'ffmpeg'
-    cmd += ' -framerate %i -start_number %i' % (frame_rate, start)
+    cmd += ' -framerate %i -f image2 -start_number %i' % (frame_rate, start)
     if input_args:
         cmd += ' %s ' % input_args
     cmd += ' -i "%s"' % images_path
