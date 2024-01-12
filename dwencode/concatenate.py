@@ -23,7 +23,8 @@ STACKED_ARGS = (
 def _get_common_root(paths):
     paths = [os.path.normpath(p).replace('\\', '/') for p in paths]
     root = os.path.commonprefix(paths)
-    if not root:
+    if not root or os.path.normpath(root) != os.path.abspath(root):
+        # os.path.exists('/') returns True on Windows...
         raise Exception('Videos need to be on the same disk.')
     if not os.path.isdir(root):
         root = os.path.dirname(root)
