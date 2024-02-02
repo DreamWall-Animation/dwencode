@@ -24,7 +24,7 @@ def get_ffmpeg_path(ffmpeg_path=None):
 
     ffmpeg_path = ffmpeg_path or "ffmpeg"
     try:
-        subprocess.check_call('%s -version' % ffmpeg_path)
+        subprocess.check_call([ffmpeg_path, '-version'])
     except subprocess.CalledProcessError:
         raise Exception('FFmpeg not found.')
 
