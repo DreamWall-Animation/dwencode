@@ -58,7 +58,6 @@ def get_padding_values(width, height, target_width, target_height):
 def drawtext(
         text, x, y, color=None, font_path=None, size=36, start=None, end=None):
     if text == '{framerange}':
-        print(9, color)
         return draw_framerange(x, y, color, font_path, size, start, end)
     color = color or 'white'
     text = text.replace(':', r'\:')
