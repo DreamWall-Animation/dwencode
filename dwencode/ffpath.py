@@ -15,7 +15,7 @@ def get_ffmpeg_path(ffmpeg_path=None):
     global _ffmpeg_valid_path
     if _ffmpeg_valid_path:
         return _ffmpeg_valid_path
-    if ffmpeg_path:
+    if ffmpeg_path and ffmpeg_path != 'ffmpeg':
         if os.path.isdir(ffmpeg_path):
             ffmpeg_path += '/ffmpeg.exe'
         if not os.path.exists(ffmpeg_path):
