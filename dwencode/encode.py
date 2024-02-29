@@ -13,10 +13,11 @@ import shlex
 import subprocess
 
 from dwencode.ffpath import get_ffmpeg_path
+from dwencode.probe.ffprobe import get_audio_duration
 
 
 def extract_image_from_video(video_path, time, output_path, ffmpegpath=None):
-    ffmpeg = get_ffmpeg_path(ffmpeg_path=ffmpegpath)
+    ffmpeg = get_ffmpeg_path(path=ffmpegpath)
     subprocess.check_call(shlex.split(
         f'{ffmpeg} -ss {time} -i {video_path} -frames:v 1 -y {output_path}'))
 
@@ -203,6 +204,7 @@ def encode(
 
     frame_rate = frame_rate or 24
     start = start or 0
+    duration = (end - start + 1) / float(frame_rate)
 
     font_path = conform_path(font_path)
     if source_width and source_height:
@@ -228,10 +230,19 @@ def encode(
         if sound_offset:
             cmd += ' -itsoffset %f' % sound_offset
         cmd += ' -i "%s"' % sound_path
+        # Audio must be at least as long as vid for streams durations to match:
+        audio_duration = get_audio_duration(sound_path)
+        if audio_duration < duration:
+            # the -t flag will ensure duration. Add some extra audio for safety
+            extra = int(duration - audio_duration) + 1
+            cmd += ' -af "apad=pad_dur=%i"' % extra
     elif add_silent_audio:
         # Add empty sound in case of concatenate with "-c:a copy"
         silence_settings = silence_settings or 'anullsrc=cl=mono:r=48000'
         cmd += ' -f lavfi -i ' + silence_settings
+
+    # Force duration to video length
+    cmd += ' -t %s' % duration  # for exact vid/audio matches, avoid 22050hz
 
     # Start filter complex
     filter_complex = []
@@ -278,10 +289,6 @@ def encode(
     # Metadata
     for key, value in metadata or []:
         cmd += ' -metadata %s="%s"' % (key, value)
-
-    # Force duration to video length (in case audio is longer)
-    duration = (end - start + 1) / float(frame_rate)
-    cmd += ' -t %s' % duration
 
     # Video codec
     if not video_codec:
