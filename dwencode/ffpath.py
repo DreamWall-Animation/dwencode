@@ -1,63 +1,31 @@
-import logging
 import os
+import logging
 import subprocess
+from functools import lru_cache
 
 
-_ffmpeg_valid_path = None
-_ffprobe_valid_path = None
+CREATE_NO_WINDOW = 0x08000000
 
 
-def get_ffmpeg_path(ffmpeg_path=None):
-    """
-    Series of check up to lookup for a valid ffmpeg path. Cache the result to
-    avoid those check each time.
-    """
-    global _ffmpeg_valid_path
-    if _ffmpeg_valid_path:
-        return _ffmpeg_valid_path
-    if ffmpeg_path and ffmpeg_path != 'ffmpeg':
-        if os.path.isdir(ffmpeg_path):
-            ffmpeg_path += '/ffmpeg.exe'
-        if not os.path.exists(ffmpeg_path):
-            msg = '"%s" does not exist. Try with "ffmpeg" command.'
-            logging.warning(msg % ffmpeg_path)
-
-    ffmpeg_path = ffmpeg_path or "ffmpeg"
+@lru_cache()
+def get_ffmpeg_executable_path(name='ffmpeg', path=None):
+    executable_name = f'{name}.exe' if os.name == 'nt' else name
+    if path and os.path.isdir(path):
+        path = f'{path}/{executable_name}'
+    if path and not os.path.exists(path):
+        logging.warning(f'"{path}" does not exist.')
+    path = path or name
     try:
-        subprocess.check_call([ffmpeg_path, '-version'])
+        subprocess.check_call(
+            f'{path} -version', creationflags=CREATE_NO_WINDOW)
     except subprocess.CalledProcessError:
-        raise Exception('FFmpeg not found.')
-
-    _ffmpeg_valid_path = ffmpeg_path
-    return _ffmpeg_valid_path
+        raise Exception(f'"{name}" not found.')
+    return path
 
 
-def get_ffprobe_path(ffprobe_path=None):
-    """
-    Same as 'get_ffmpeg_path' for ffprobe
-    """
-    global _ffprobe_valid_path
-    if _ffprobe_valid_path:
-        return _ffprobe_valid_path
+def get_ffmpeg_path(path=None):
+    return get_ffmpeg_executable_path('ffmpeg', path)
 
-    if ffprobe_path:
-        if ffprobe_path.lower().endswith('ffmpeg.exe'):
-            ffprobe_path = os.path.dirname(ffprobe_path)
-        if os.path.isdir(ffprobe_path):
-            ffprobe_path += '/ffprobe.exe'
-    elif _ffmpeg_valid_path:
-        ffprobe_path = os.path.dirname(_ffmpeg_valid_path)
-        ffprobe_path += 'ffprobe.exe'
 
-    if ffprobe_path and not os.path.exists(ffprobe_path):
-        msg = '"%s" does not exist. Try with "ffprobe" command.'
-        logging.warning(msg % ffprobe_path)
-
-    ffprobe_path = ffprobe_path or "ffprobe"
-    try:
-        subprocess.check_call('%s -version' % ffprobe_path)
-    except subprocess.CalledProcessError:
-        raise Exception('FFmpeg not found.')
-
-    _ffprobe_valid_path = ffprobe_path
-    return _ffprobe_valid_path
+def get_ffprobe_path(path=None):
+    return get_ffmpeg_executable_path('ffprobe', path)
