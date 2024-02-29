@@ -34,11 +34,11 @@ def _get_common_root(paths):
 
 
 def _get_videos_durations(paths):
-    from dwencode.probe import get_duration
+    from dwencode.probe import get_video_duration
     durations = []
     for path in paths:
         try:
-            durations.append(get_duration(path))
+            durations.append(get_video_duration(path))
         except ValueError:
             print('ERROR: Could not get duration of %s' % path)
             raise

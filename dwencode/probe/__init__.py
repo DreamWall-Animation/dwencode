@@ -1,26 +1,26 @@
-from dwencode.probe.ffprobe import *
+from dwencode.probe import ffprobe
 from dwencode.probe import quicktime
 
 
 try:
-    import cv2
+    import cv2  # opencv-python
 except ImportError:
     print('Warning: cannot use opencv => slower movie duration queries.')
     cv2 = None
 
 
-def get_duration(video_path, frames=False):
+def cv2_get_video_duration(video_path, frames=False):
+    video = cv2.VideoCapture(video_path)
+    duration = video.get(cv2.CAP_PROP_FRAME_COUNT)
+    if not frames:
+        duration /= video.get(cv2.CAP_PROP_FPS)
+    return duration
+
+
+def get_video_duration(video_path, frames=False, ffprobe_path=None):
     if cv2 is not None:
-        video = cv2.VideoCapture(video_path)
-        duration = video.get(cv2.CAP_PROP_FRAME_COUNT)
-        if not frames:
-            duration /= video.get(cv2.CAP_PROP_FPS)
-        return duration
+        return cv2_get_video_duration(video_path, frames)
     elif video_path.endswith('.mov'):
         return quicktime.get_mov_duration(video_path, frames, framerate=25.0)
     else:
-        data = probe(video_path)
-        vid_stream = [s for s in data['streams'] if 'nb_frames' in s][0]
-        if frames:
-            return int(vid_stream['nb_frames'])
-        return float(vid_stream['duration'])
+        return ffprobe.get_video_duration(video_path, frames, ffprobe_path)
