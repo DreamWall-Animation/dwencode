@@ -93,7 +93,8 @@ def get_streams_durations(file_path, ffprobe_path=None):
     data = probe(file_path, ffprobe_path)
     if len(data['streams']) != 2:
         raise ValueError('This only handles one video and one audio stream.')
-    durations = {s['codec_type']: s['duration'] for s in data['streams']}
+    durations = {
+        s['codec_type']: float(s['duration']) for s in data['streams']}
     if len(durations) != 2:
         raise ValueError('This only handles one video and one audio stream.')
     return durations
