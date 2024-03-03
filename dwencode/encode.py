@@ -303,6 +303,8 @@ def encode(
         cmd += ' ' + audio_codec
     elif sound_path:
         cmd += ' -c:a copy'
+    # https://stackoverflow.com/a/35520705/1442895
+    cmd += ' -avoid_negative_ts make_zero -fflags +genpts'
 
     # Output
     if overwrite:
