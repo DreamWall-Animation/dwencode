@@ -13,7 +13,6 @@ import shlex
 import subprocess
 
 from dwencode.ffpath import get_ffmpeg_path
-from dwencode.probe.ffprobe import get_audio_duration
 
 
 def extract_image_from_video(video_path, time, output_path, ffmpegpath=None):
@@ -204,7 +203,6 @@ def encode(
 
     frame_rate = frame_rate or 24
     start = start or 0
-    duration = (end - start + 1) / float(frame_rate)
 
     font_path = conform_path(font_path)
     if source_width and source_height:
@@ -230,19 +228,11 @@ def encode(
         if sound_offset:
             cmd += ' -itsoffset %f' % sound_offset
         cmd += ' -i "%s"' % sound_path
-        # Audio must be at least as long as vid for streams durations to match:
-        audio_duration = get_audio_duration(sound_path)
-        if audio_duration < duration:
-            # the -t flag will ensure duration. Add some extra audio for safety
-            extra = int(duration - audio_duration) + 1
-            cmd += ' -af "apad=pad_dur=%i"' % extra
+        cmd += ' -af apad -shortest'  # make sure audio is same length as vid.
     elif add_silent_audio:
         # Add empty sound in case of concatenate with "-c:a copy"
         silence_settings = silence_settings or 'anullsrc=cl=mono:r=48000'
-        cmd += ' -f lavfi -i ' + silence_settings
-
-    # Force duration to video length
-    cmd += ' -t %s' % duration  # for exact vid/audio matches, avoid 22050hz
+        cmd += ' -f lavfi -i %s -shortest' % silence_settings
 
     # Start filter complex
     filter_complex = []
@@ -303,8 +293,7 @@ def encode(
         cmd += ' ' + audio_codec
     elif sound_path:
         cmd += ' -c:a copy'
-    # https://stackoverflow.com/a/35520705/1442895
-    cmd += ' -avoid_negative_ts make_zero -fflags +genpts'
+    cmd += ' -fflags +genpts'
 
     # Output
     if overwrite:
