@@ -1,5 +1,7 @@
+
 import os
 import logging
+import platform
 import subprocess
 from functools import lru_cache
 
@@ -16,8 +18,12 @@ def get_ffmpeg_executable_path(name='ffmpeg', path=None):
         logging.warning(f'"{path}" does not exist.')
     path = path or name
     try:
-        subprocess.check_call(
-            f'{path} -version', creationflags=CREATE_NO_WINDOW)
+        if platform.system() == 'Windows':
+            subprocess.check_call(
+                f'{path} -version',
+                creationflags=CREATE_NO_WINDOW)
+        else:
+            subprocess.check_call([path, '-version'])
     except subprocess.CalledProcessError:
         raise Exception(f'"{name}" not found.')
     return path
