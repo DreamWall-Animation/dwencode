@@ -59,12 +59,16 @@ def drawtext(
         text, x, y, color=None, font_path=None, size=36, start=None, end=None):
     if text == '{framerange}':
         return draw_framerange(x, y, color, font_path, size, start, end)
+    args = []
+    if not color:
+        # TODO: handle border colors options
+        args.append('bordercolor=black@0.4:borderw=%s' % int(size / 18))
     color = color or 'white'
     text = text.replace(':', r'\:')
     text = text.replace('{frame}', '%{frame_num}')
     timetag = datetime.datetime.now().strftime(r'%Y/%m/%d %H\:%M')
     text = text.replace('{datetime}', timetag)
-    args = [
+    args.extend([
         None if font_path is None else "fontfile='%s'" % font_path,
         "text='%s'" % text,
         "x=%s" % x,
@@ -72,7 +76,7 @@ def drawtext(
         "start_number=%i" % start,
         "fontcolor=%s" % color,
         "fontsize=%i" % size,
-    ]
+    ])
     args = ':'.join([a for a in args if a])
     return "drawtext=%s" % args
 
