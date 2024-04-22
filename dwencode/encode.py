@@ -149,7 +149,6 @@ def encode(
         audio_codec=None,
         add_silent_audio=False,
         silence_settings=None,
-        timecode=True,
         ffmpeg_path=None,
         metadata=None,
         overwrite=False):
@@ -292,14 +291,6 @@ def encode(
         if not video_codec.startswith(' '):
             video_codec = ' ' + video_codec
         cmd += video_codec
-
-    # Timecode
-    if timecode and end:
-        # hh:mm:ssSEPff
-        seconds = (end - start + 1) / frame_rate
-        hours, rest = divmod(seconds, 3600)
-        minutes, seconds = divmod(rest, 60)
-        cmd += ' -timecode %02d:%02d:%g' % (hours, minutes, seconds)
 
     # Sound
     if audio_codec and (sound_path or add_silent_audio):
