@@ -12,7 +12,7 @@ except ImportError:
 def cv2_get_video_duration(video_path, frames=False):
     video = cv2.VideoCapture(video_path)
     duration = video.get(cv2.CAP_PROP_FRAME_COUNT)
-    if not frames:
+    if not frames and duration:
         duration /= video.get(cv2.CAP_PROP_FPS)
     return duration
 
