@@ -232,7 +232,11 @@ def encode(
         if sound_offset:
             cmd += ' -itsoffset %f' % sound_offset
         cmd += ' -i "%s"' % sound_path
-        cmd += ' -af apad -shortest'  # make sure audio is same length as vid.
+        if end:
+            duration = (end - start + 1) / frame_rate
+            cmd += ' -t %s' % duration
+        else:
+            cmd += ' -af apad -shortest'  # make sure audio is as long as vid
     elif add_silent_audio:
         # Add empty sound in case of concatenate with "-c:a copy"
         silence_settings = silence_settings or 'anullsrc=cl=mono:r=48000'
