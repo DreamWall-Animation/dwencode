@@ -151,7 +151,8 @@ def encode(
         silence_settings=None,
         ffmpeg_path=None,
         metadata=None,
-        overwrite=False):
+        overwrite=False,
+        verbose=False):
     """
     Encode images to movie with text overlays (using FFmpeg).
 
@@ -216,8 +217,12 @@ def encode(
     target_width = target_width or width
     target_height = target_height or height
 
-    # Input
+    # Command start
     cmd = ffmpeg_path or 'ffmpeg'
+    if not verbose:
+        cmd += ' -hide_banner -loglevel error -nostats'
+
+    # Input
     cmd += ' -framerate %i -f image2 -start_number %i' % (frame_rate, start)
     if input_args:
         cmd += ' %s ' % input_args
