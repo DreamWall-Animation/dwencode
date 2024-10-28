@@ -232,6 +232,14 @@ def encode(
     if overlay_image:
         cmd += ' -i "%s"' % overlay_image['path']
 
+    # Audio codec
+    if audio_codec and (sound_path or add_silent_audio):
+        audio_codec = ' ' + audio_codec
+    elif sound_path:
+        audio_codec = ' -c:a copy'
+    else:
+        audio_codec = ' '
+
     # Sound
     if sound_path:
         if sound_offset:
@@ -302,11 +310,7 @@ def encode(
         cmd += video_codec
 
     # Sound
-    if audio_codec and (sound_path or add_silent_audio):
-        cmd += ' ' + audio_codec
-    elif sound_path:
-        cmd += ' -c:a copy'
-    cmd += ' -fflags +genpts'
+    cmd += audio_codec + ' -fflags +genpts'
 
     # Output
     if overwrite:
