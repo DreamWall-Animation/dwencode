@@ -248,7 +248,7 @@ def encode(
         if end:
             duration = (end - start + 1) / frame_rate
             cmd += ' -t %s' % duration
-        elif '-c:a copy' not in audio_codec:
+        if '-c:a copy' not in audio_codec:
             cmd += ' -af apad -shortest'  # make sure audio is as long as vid
     elif add_silent_audio:
         # Add empty sound in case of concatenate with "-c:a copy"
