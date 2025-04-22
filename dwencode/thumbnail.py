@@ -3,7 +3,8 @@ from dwencode.ffpath import get_ffmpeg_path
 
 
 def create_thumbnail(
-        source, output_path, width=256, height=144, time=0, overwrite=False):
+        source, output_path, width=256, height=144,
+        time=0, overwrite=False, creationflags=0):
     """
     source can be a video or an image.
     """
@@ -14,4 +15,4 @@ def create_thumbnail(
     if overwrite:
         cmd.append('-y')
     cmd.append(output_path)
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, creationflags=creationflags)
