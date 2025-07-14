@@ -20,7 +20,7 @@ STACKED_ARGS = (
     "[ol-vid1][v2]overlay={overlay},setsar=1")
 
 
-def _get_common_root(paths):
+def get_common_root(paths):
     paths = [os.path.normpath(p).replace('\\', '/') for p in paths]
     root = os.path.commonprefix(paths)
     if not root or os.path.normpath(root) != os.path.abspath(root):
@@ -33,7 +33,7 @@ def _get_common_root(paths):
     return root
 
 
-def _get_videos_durations(paths):
+def get_videos_durations(paths):
     from dwencode.probe import get_video_duration
     durations = []
     for path in paths:
@@ -45,7 +45,7 @@ def _get_videos_durations(paths):
     return durations
 
 
-def _create_list_file(paths, root, index=0, timings=None):
+def create_list_file(paths, root, index=0, timings=None):
     concat_list = []
     for i, path in enumerate(paths):
         concat_list.append('file %s' % path.replace(root, '.'))
@@ -71,17 +71,17 @@ def _get_input_args(
         paths, stack_orientation='horizontal', master_list_index=0):
     input_pattern = '-f concat -safe 0 -i %s '
     if not isinstance(paths[0], list):
-        common_root = _get_common_root(paths)
-        list_path = _create_list_file(paths, common_root)
+        common_root = get_common_root(paths)
+        list_path = create_list_file(paths, common_root)
         args = input_pattern % list_path
         return [list_path], args, common_root
-    common_root = _get_common_root(
+    common_root = get_common_root(
         [path for sublist in paths for path in sublist])
     args = ' '
     lists_paths = []
-    timings = _get_videos_durations(paths[master_list_index])
+    timings = get_videos_durations(paths[master_list_index])
     for i, stack in enumerate(paths):
-        list_path = _create_list_file(stack, common_root, i, timings)
+        list_path = create_list_file(stack, common_root, i, timings)
         lists_paths.append(list_path)
         args += input_pattern % list_path
     if stack_orientation in ('horizontal', 0):
