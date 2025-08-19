@@ -15,15 +15,16 @@ def concatenate_videos(
         video_codec='libx264',
         audio_codec='aac',
         pix_fmt='yuv420p',
-        audio_layout='stereo'):
+        audio_layout=None):
 
     # Open the output video file
     output = av.open(output_path, mode='w')
 
     # Get info from first video
-    if not all([fps, width, height]):
+    if not all([fps, width, height, audio_sample_rate, audio_layout]):
         temp = av.open(paths[0])
         video_stream = temp.streams.video[0]
+        audio_stream = temp.streams.audio[0]
         if not fps:
             fps = int(video_stream.base_rate)
         if not width:
@@ -31,8 +32,9 @@ def concatenate_videos(
         if not height:
             height = video_stream.format.height
         if not audio_sample_rate:
-            audio_sample_rate = (
-                temp.streams.audio[0].time_base.denominator)
+            audio_sample_rate = audio_stream.time_base.denominator
+        if not audio_layout:
+            audio_layout = audio_stream.layout.name
         temp.close()
     print(f'Encoding to {width}x{height} {fps} fps')
 
@@ -56,7 +58,8 @@ def concatenate_videos(
     # Write each frame
     count = len(paths)
     for i, path in enumerate(paths):
-        print(f'{i + 1}/{count}: {os.path.basename(path)}')
+        basename = os.path.basename(path)
+        print(f'{i + 1}/{count}: {basename}')
         yield i, count
 
         # Handle Video
@@ -76,6 +79,10 @@ def concatenate_videos(
         # Handle Audio
         container.seek(0)
         audio_stream = container.streams.audio[0]
+        if audio_stream.layout.name != audio_layout:
+            raise ValueError(
+                'Inconsistant audio layout: '
+                f'{audio_stream.layout.name} vs {audio_layout} ({basename})')
         audio_stream.thread_type = 'AUTO'  # Important for performance
         video_duration = video_stream.duration * video_stream.time_base
         expected_audio_samples = int(video_duration * audio_sample_rate)
