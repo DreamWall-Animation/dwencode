@@ -15,13 +15,16 @@ def concatenate_videos(
         video_codec='libx264',
         audio_codec='aac',
         pix_fmt='yuv420p',
+        audio_format=None,
         audio_layout=None):
 
     # Open the output video file
     output = av.open(output_path, mode='w')
 
     # Get info from first video
-    if not all([fps, width, height, audio_sample_rate, audio_layout]):
+    if not all([
+            fps, width, height, audio_sample_rate, audio_layout, audio_format
+            ]):
         temp = av.open(paths[0])
         video_stream = temp.streams.video[0]
         audio_stream = temp.streams.audio[0]
@@ -35,6 +38,8 @@ def concatenate_videos(
             audio_sample_rate = audio_stream.time_base.denominator
         if not audio_layout:
             audio_layout = audio_stream.layout.name
+        if not audio_format:
+            audio_format = audio_stream.format.name
         temp.close()
     print(f'Encoding to {width}x{height} {fps} fps')
 
@@ -79,21 +84,32 @@ def concatenate_videos(
         # Handle Audio
         container.seek(0)
         audio_stream = container.streams.audio[0]
-        if audio_stream.layout.name != audio_layout:
-            raise ValueError(
-                'Inconsistant audio layout: '
-                f'{audio_stream.layout.name} vs {audio_layout} ({basename})')
+        needs_resampling = (
+            audio_stream.layout.name != audio_layout
+            or audio_stream.time_base.denominator != audio_sample_rate
+            or audio_stream.format.name
+        )
         audio_stream.thread_type = 'AUTO'  # Important for performance
         video_duration = video_stream.duration * video_stream.time_base
         expected_audio_samples = int(video_duration * audio_sample_rate)
         samples = []
         for audio_frame in container.decode(audio_stream):
-            samples.append(audio_frame)
+            if needs_resampling:
+                audio_resampler = av.AudioResampler(
+                    format=audio_format,
+                    layout=audio_layout,
+                    rate=audio_sample_rate)
+                for audio_frame in audio_resampler.resample(audio_frame):
+                    samples.append(audio_frame)
+            else:
+                samples.append(audio_frame)
         # Flatten and rebuild audio frame list
         raw_samples = av.AudioFifo(
-            format='fltp', layout=audio_layout, sample_rate=audio_sample_rate)
-        for af in samples:
-            raw_samples.write(af)
+            format=audio_format,
+            layout=audio_layout,
+            sample_rate=audio_sample_rate)
+        for audio_frame in samples:
+            raw_samples.write(audio_frame)
         total_samples = raw_samples.samples
         sample_diff = expected_audio_samples - total_samples
         # Adjust duration
@@ -101,7 +117,8 @@ def concatenate_videos(
             print('pad audio')
             # Pad with silence
             silent_frame = av.AudioFrame(
-                'fltp', audio_layout, audio_sample_rate, samples=sample_diff)
+                audio_format,
+                audio_layout, audio_sample_rate, samples=sample_diff)
             for plane in silent_frame.planes:
                 plane.update(np.zeros(sample_diff, dtype=np.float32).tobytes())
             raw_samples.write(silent_frame)
