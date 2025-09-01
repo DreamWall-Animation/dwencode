@@ -24,20 +24,23 @@ def _concatenate_videos(
             fps, width, height, audio_sample_rate, audio_layout, audio_format
             ]):
         temp = av.open(paths[0])
-        video_stream = temp.streams.video[0]
-        audio_stream = temp.streams.audio[0]
+        first_video_stream = temp.streams.video[0]
         if not fps:
-            fps = int(video_stream.base_rate)
+            fps = int(first_video_stream.base_rate)
         if not width:
-            width = video_stream.format.width
+            width = first_video_stream.format.width
         if not height:
-            height = video_stream.format.height
-        if not audio_sample_rate:
-            audio_sample_rate = audio_stream.time_base.denominator
-        if not audio_layout:
-            audio_layout = audio_stream.layout.name
-        if not audio_format:
-            audio_format = audio_stream.format.name
+            height = first_video_stream.format.height
+        try:
+            first_audio_stream = temp.streams.audio[0]
+            if not audio_sample_rate:
+                audio_sample_rate = first_audio_stream.time_base.denominator
+            if not audio_layout:
+                audio_layout = first_audio_stream.layout.name
+            if not audio_format:
+                audio_format = first_audio_stream.format.name
+        except IndexError:
+            first_audio_stream = None
         temp.close()
     print(f'Encoding to {width}x{height} {fps} fps')
 
@@ -47,16 +50,17 @@ def _concatenate_videos(
     out_video_stream.width = width
     out_video_stream.height = height
     # Output audio stream
-    out_audio_stream = output.add_stream(audio_codec)
-    out_audio_stream.rate = audio_sample_rate
-    # out_audio_stream.channels = 2
-    out_audio_stream.layout = audio_layout
+    if first_audio_stream is not None:
+        out_audio_stream = output.add_stream(audio_codec)
+        out_audio_stream.rate = audio_sample_rate
+        # out_audio_stream.channels = 2
+        out_audio_stream.layout = audio_layout
+        audio_time_base = fractions.Fraction(1, audio_sample_rate)
 
     # Global time counter
     frame_pts = 0  # Monotonically increasing PTS across all videos
     audio_pts = 0
     video_time_base = fractions.Fraction(1, fps)
-    audio_time_base = fractions.Fraction(1, audio_sample_rate)
 
     # Write each frame
     count = len(paths)
@@ -80,6 +84,8 @@ def _concatenate_videos(
                 output.mux(packet)
 
         # Handle Audio
+        if first_audio_stream is None:
+            continue
         container.seek(0)
         try:
             audio_stream = container.streams.audio[0]
@@ -144,8 +150,9 @@ def _concatenate_videos(
     # Flush encoder
     for packet in out_video_stream.encode():
         output.mux(packet)
-    for packet in out_audio_stream.encode():
-        output.mux(packet)
+    if audio_stream is not None:
+        for packet in out_audio_stream.encode():
+            output.mux(packet)
 
 
 def concatenate_videos(
