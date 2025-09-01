@@ -115,9 +115,7 @@ def _concatenate_videos(
         if sample_diff > 0:
             print('pad audio')
             # Pad with silence
-            silent_frame = av.AudioFrame(
-                audio_format,
-                audio_layout, audio_sample_rate, samples=sample_diff)
+            silent_frame = av.AudioFrame(audio_format, audio_layout)
             for plane in silent_frame.planes:
                 plane.update(np.zeros(sample_diff, dtype=np.float32).tobytes())
             raw_samples.write(silent_frame)
