@@ -107,6 +107,7 @@ def _concatenate_videos(
             layout=audio_layout,
             sample_rate=audio_sample_rate)
         for audio_frame in samples:
+            audio_frame.pts = None
             raw_samples.write(audio_frame)
         total_samples = raw_samples.samples
         sample_diff = expected_audio_samples - total_samples
