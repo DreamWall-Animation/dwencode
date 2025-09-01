@@ -81,55 +81,65 @@ def _concatenate_videos(
 
         # Handle Audio
         container.seek(0)
-        audio_stream = container.streams.audio[0]
-        needs_resampling = (
-            audio_stream.layout.name != audio_layout
-            or audio_stream.time_base.denominator != audio_sample_rate
-            or audio_stream.format.name
-        )
-        audio_stream.thread_type = 'AUTO'  # Important for performance
-        video_duration = video_stream.duration * video_stream.time_base
-        expected_audio_samples = int(video_duration * audio_sample_rate)
-        samples = []
-        for audio_frame in container.decode(audio_stream):
-            if needs_resampling:
-                audio_resampler = av.AudioResampler(
-                    format=audio_format,
-                    layout=audio_layout,
-                    rate=audio_sample_rate)
-                for audio_frame in audio_resampler.resample(audio_frame):
+        try:
+            audio_stream = container.streams.audio[0]
+            needs_resampling = (
+                audio_stream.layout.name != audio_layout
+                or audio_stream.time_base.denominator != audio_sample_rate
+                or audio_stream.format.name
+            )
+            audio_stream.thread_type = 'AUTO'  # Important for performance
+            video_duration = video_stream.duration * video_stream.time_base
+            expected_audio_samples = int(video_duration * audio_sample_rate)
+            samples = []
+            for audio_frame in container.decode(audio_stream):
+                if needs_resampling:
+                    audio_resampler = av.AudioResampler(
+                        format=audio_format,
+                        layout=audio_layout,
+                        rate=audio_sample_rate)
+                    for audio_frame in audio_resampler.resample(audio_frame):
+                        samples.append(audio_frame)
+                else:
                     samples.append(audio_frame)
-            else:
-                samples.append(audio_frame)
-        # Flatten and rebuild audio frame list
-        raw_samples = av.AudioFifo(
-            format=audio_format,
-            layout=audio_layout,
-            sample_rate=audio_sample_rate)
-        for audio_frame in samples:
-            audio_frame.pts = None
-            raw_samples.write(audio_frame)
-        total_samples = raw_samples.samples
-        sample_diff = expected_audio_samples - total_samples
-        # Adjust duration
-        if sample_diff > 0:
-            print('pad audio')
-            # Pad with silence
+            # Flatten and rebuild audio frame list
+            raw_samples = av.AudioFifo(
+                format=audio_format,
+                layout=audio_layout,
+                sample_rate=audio_sample_rate)
+            for audio_frame in samples:
+                audio_frame.pts = None
+                raw_samples.write(audio_frame)
+            total_samples = raw_samples.samples
+            sample_diff = expected_audio_samples - total_samples
+            # Adjust duration
+            if sample_diff > 0:
+                print('pad audio')
+                # Pad with silence
+                silent_frame = av.AudioFrame(audio_format, audio_layout)
+                for plane in silent_frame.planes:
+                    plane.update(np.zeros(
+                        sample_diff, dtype=np.float32).tobytes())
+                raw_samples.write(silent_frame)
+            elif sample_diff < 0:
+                print('trim audio')
+                raw_samples.read(-sample_diff)  # Trim excess
+            # Write audio frames
+            while raw_samples.samples > 0:
+                frame = raw_samples.read(min(1024, raw_samples.samples))
+                frame.pts = audio_pts
+                frame.time_base = audio_time_base
+                audio_pts += frame.samples
+                for packet in out_audio_stream.encode(frame):
+                    output.mux(packet)
+        except IndexError:
+            # No audio, add silence:
+            print('Silent audio')
             silent_frame = av.AudioFrame(audio_format, audio_layout)
             for plane in silent_frame.planes:
-                plane.update(np.zeros(sample_diff, dtype=np.float32).tobytes())
+                plane.update(np.zeros(
+                    expected_audio_samples, dtype=np.float32).tobytes())
             raw_samples.write(silent_frame)
-        elif sample_diff < 0:
-            print('trim audio')
-            raw_samples.read(-sample_diff)  # Trim excess
-        # Write audio frames
-        while raw_samples.samples > 0:
-            frame = raw_samples.read(min(1024, raw_samples.samples))
-            frame.pts = audio_pts
-            frame.time_base = audio_time_base
-            audio_pts += frame.samples
-            for packet in out_audio_stream.encode(frame):
-                output.mux(packet)
 
     # Flush encoder
     for packet in out_video_stream.encode():
