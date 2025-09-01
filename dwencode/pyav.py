@@ -2,12 +2,13 @@ import os
 import fractions
 
 import av
+import av.container
 import numpy as np
 
 
-def concatenate_videos(
+def _concatenate_videos(
         paths,
-        output_path,
+        output: av.container.OutputContainer,
         fps=None,
         width=None,
         height=None,
@@ -17,9 +18,6 @@ def concatenate_videos(
         pix_fmt='yuv420p',
         audio_format=None,
         audio_layout=None):
-
-    # Open the output video file
-    output = av.open(output_path, mode='w')
 
     # Get info from first video
     if not all([
@@ -140,5 +138,34 @@ def concatenate_videos(
     for packet in out_audio_stream.encode():
         output.mux(packet)
 
-    # Close the container
-    output.close()
+
+def concatenate_videos(
+        paths,
+        output_path,
+        fps=None,
+        width=None,
+        height=None,
+        audio_sample_rate=None,
+        video_codec='libx264',
+        audio_codec='aac',
+        pix_fmt='yuv420p',
+        audio_format=None,
+        audio_layout=None):
+
+    output = av.open(output_path, mode='w')
+    try:
+        for data in _concatenate_videos(
+                paths,
+                output,
+                fps=fps,
+                width=width,
+                height=height,
+                audio_sample_rate=audio_sample_rate,
+                video_codec=video_codec,
+                audio_codec=audio_codec,
+                pix_fmt=pix_fmt,
+                audio_format=audio_format,
+                audio_layout=audio_layout):
+            yield data
+    finally:
+        output.close()
