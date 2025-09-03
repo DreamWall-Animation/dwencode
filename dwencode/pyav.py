@@ -14,7 +14,9 @@ def _concatenate_videos(
         height=None,
         audio_sample_rate=None,
         video_codec='libx264',
+        video_codec_options=None,
         audio_codec='aac',
+        audio_codec_options=None,
         pix_fmt='yuv420p',
         audio_format=None,
         audio_layout=None):
@@ -45,13 +47,15 @@ def _concatenate_videos(
     print(f'Encoding to {width}x{height} {fps} fps')
 
     # Create a video stream (H.264 codec, 30 fps)
-    out_video_stream = output.add_stream(video_codec, rate=fps)
+    out_video_stream = output.add_stream(
+        video_codec, rate=fps, options=video_codec_options)
     out_video_stream.pix_fmt = pix_fmt
     out_video_stream.width = width
     out_video_stream.height = height
     # Output audio stream
     if first_audio_stream is not None:
-        out_audio_stream = output.add_stream(audio_codec)
+        out_audio_stream = output.add_stream(
+            audio_codec, options=audio_codec_options)
         out_audio_stream.rate = audio_sample_rate
         # out_audio_stream.channels = 2
         out_audio_stream.layout = audio_layout
