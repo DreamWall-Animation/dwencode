@@ -6,6 +6,38 @@ import av.container
 import numpy as np
 
 
+def concatenate_videos(
+        paths,
+        output_path,
+        fps=None,
+        width=None,
+        height=None,
+        audio_sample_rate=None,
+        video_codec='libx264',
+        audio_codec='aac',
+        pix_fmt='yuv420p',
+        audio_format=None,
+        audio_layout=None):
+
+    output = av.open(output_path, mode='w')
+    try:
+        for data in _concatenate_videos(
+                paths,
+                output,
+                fps=fps,
+                width=width,
+                height=height,
+                audio_sample_rate=audio_sample_rate,
+                video_codec=video_codec,
+                audio_codec=audio_codec,
+                pix_fmt=pix_fmt,
+                audio_format=audio_format,
+                audio_layout=audio_layout):
+            yield data
+    finally:
+        output.close()
+
+
 def _concatenate_videos(
         paths,
         output: av.container.OutputContainer,
@@ -91,16 +123,27 @@ def _concatenate_videos(
         if first_audio_stream is None:
             continue
         container.seek(0)
+        video_duration = video_stream.duration * video_stream.time_base
+        expected_audio_samples = int(video_duration * audio_sample_rate)
+        raw_samples = av.AudioFifo(
+            format=audio_format,
+            layout=audio_layout,
+            sample_rate=audio_sample_rate)
         try:
             audio_stream = container.streams.audio[0]
+        except IndexError:
+            # No audio, add silence:
+            print('Silent audio')
+            raw_samples.write(create_silence(
+                audio_format, audio_layout, audio_sample_rate,
+                expected_audio_samples))
+        else:
             needs_resampling = (
                 audio_stream.layout.name != audio_layout
                 or audio_stream.time_base.denominator != audio_sample_rate
                 or audio_stream.format.name
             )
             audio_stream.thread_type = 'AUTO'  # Important for performance
-            video_duration = video_stream.duration * video_stream.time_base
-            expected_audio_samples = int(video_duration * audio_sample_rate)
             samples = []
             for audio_frame in container.decode(audio_stream):
                 if needs_resampling:
@@ -113,10 +156,6 @@ def _concatenate_videos(
                 else:
                     samples.append(audio_frame)
             # Flatten and rebuild audio frame list
-            raw_samples = av.AudioFifo(
-                format=audio_format,
-                layout=audio_layout,
-                sample_rate=audio_sample_rate)
             for audio_frame in samples:
                 audio_frame.pts = None
                 raw_samples.write(audio_frame)
@@ -126,7 +165,9 @@ def _concatenate_videos(
             if sample_diff > 0:
                 print('pad audio')
                 # Pad with silence
-                silent_frame = av.AudioFrame(audio_format, audio_layout)
+                silent_frame = av.AudioFrame(
+                    audio_format, audio_layout, sample_diff)
+                silent_frame.sample_rate = audio_sample_rate
                 for plane in silent_frame.planes:
                     plane.update(np.zeros(
                         sample_diff, dtype=np.float32).tobytes())
@@ -134,22 +175,15 @@ def _concatenate_videos(
             elif sample_diff < 0:
                 print('trim audio')
                 raw_samples.read(-sample_diff)  # Trim excess
-            # Write audio frames
-            while raw_samples.samples > 0:
-                frame = raw_samples.read(min(1024, raw_samples.samples))
-                frame.pts = audio_pts
-                frame.time_base = audio_time_base
-                audio_pts += frame.samples
-                for packet in out_audio_stream.encode(frame):
-                    output.mux(packet)
-        except IndexError:
-            # No audio, add silence:
-            print('Silent audio')
-            silent_frame = av.AudioFrame(audio_format, audio_layout)
-            for plane in silent_frame.planes:
-                plane.update(np.zeros(
-                    expected_audio_samples, dtype=np.float32).tobytes())
-            raw_samples.write(silent_frame)
+
+        # Write audio frames
+        while raw_samples.samples > 0:
+            frame = raw_samples.read(min(1024, raw_samples.samples))
+            frame.pts = audio_pts
+            frame.time_base = audio_time_base
+            audio_pts += frame.samples
+            for packet in out_audio_stream.encode(frame):
+                output.mux(packet)
 
     # Flush encoder
     for packet in out_video_stream.encode():
@@ -159,33 +193,12 @@ def _concatenate_videos(
             output.mux(packet)
 
 
-def concatenate_videos(
-        paths,
-        output_path,
-        fps=None,
-        width=None,
-        height=None,
-        audio_sample_rate=None,
-        video_codec='libx264',
-        audio_codec='aac',
-        pix_fmt='yuv420p',
-        audio_format=None,
-        audio_layout=None):
-
-    output = av.open(output_path, mode='w')
-    try:
-        for data in _concatenate_videos(
-                paths,
-                output,
-                fps=fps,
-                width=width,
-                height=height,
-                audio_sample_rate=audio_sample_rate,
-                video_codec=video_codec,
-                audio_codec=audio_codec,
-                pix_fmt=pix_fmt,
-                audio_format=audio_format,
-                audio_layout=audio_layout):
-            yield data
-    finally:
-        output.close()
+def create_silence(
+        audio_format, audio_layout, audio_sample_rate, expected_audio_samples):
+    silent_frame = av.AudioFrame(
+        audio_format, audio_layout, expected_audio_samples)
+    silent_frame.sample_rate = audio_sample_rate
+    for plane in silent_frame.planes:
+        plane.update(np.zeros(
+            expected_audio_samples, dtype=np.float32).tobytes())
+    return silent_frame
