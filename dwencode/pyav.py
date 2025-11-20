@@ -85,6 +85,7 @@ def _concatenate_videos(
     out_video_stream.width = width
     out_video_stream.height = height
     # Output audio stream
+    out_audio_stream = None
     if first_audio_stream is not None:
         out_audio_stream = output.add_stream(
             audio_codec, options=audio_codec_options)
@@ -188,7 +189,7 @@ def _concatenate_videos(
     # Flush encoder
     for packet in out_video_stream.encode():
         output.mux(packet)
-    if audio_stream is not None:
+    if out_audio_stream is not None:
         for packet in out_audio_stream.encode():
             output.mux(packet)
 
