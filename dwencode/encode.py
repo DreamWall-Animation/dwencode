@@ -128,6 +128,7 @@ def encode(
         source_height=None,
         target_width=None,
         target_height=None,
+        crop=False,
         top_left=None,
         top_middle=None,
         top_right=None,
@@ -167,6 +168,7 @@ def encode(
     - source_height (int) Optional if you have Pillow (PIL)
     - target_width (str) Different ratio than source will add black bars.
     - target_height (str) Different ratio than source will add black bars.
+    - crop (bool) Crop the image if source is different than target
     - top_left (str) Text to display
     - top_middle (str) Text to display
     - top_right (str) Text to display
@@ -265,9 +267,13 @@ def encode(
     # Scaling and padding
     image_width, x_offset, y_offset = get_padding_values(
         width, height, target_width, target_height)
-    filter_complex.append('scale=%i:-1' % image_width)
-    filter_complex.append('pad=%i:%i:%i:%i' % (
-        target_width, target_height, x_offset, y_offset))
+    if not crop:
+        filter_complex.append('scale=%i:-1' % image_width)
+        filter_complex.append('pad=%i:%i:%i:%i' % (
+            target_width, target_height, x_offset, y_offset))
+    else:
+        filter_complex.append(
+            'crop=%i:%i:0:100' % (target_width, target_height))
 
     # Overlay text
     font_size = round(target_width / 53.0 * font_scale)
