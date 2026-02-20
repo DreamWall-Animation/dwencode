@@ -57,7 +57,11 @@ def _concatenate_videos(
     if not all([
             fps, width, height, audio_sample_rate, audio_layout, audio_format
             ]):
-        temp = av.open(paths[0])
+        try:
+            temp = av.open(paths[0], metadata_errors='ignore')
+        except:
+            print(paths[0])
+            raise
         first_video_stream = temp.streams.video[0]
         if not fps:
             fps = int(first_video_stream.base_rate)
