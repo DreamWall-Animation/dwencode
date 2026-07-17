@@ -3,7 +3,6 @@ import fractions
 
 import av
 import av.container
-import numpy as np
 
 
 def concatenate_videos(
@@ -59,7 +58,7 @@ def _concatenate_videos(
     if not all(format_args):
         try:
             temp = av.open(paths[0], metadata_errors='ignore')
-        except:
+        except BaseException:
             print(paths[0])
             raise
         first_video_stream = temp.streams.video[0]
@@ -148,16 +147,22 @@ def _concatenate_videos(
                 or audio_stream.time_base.denominator != audio_sample_rate
                 or audio_stream.format.name != audio_format)
             audio_stream.thread_type = 'AUTO'  # Important for performance
+            if needs_resampling:
+                audio_resampler = av.AudioResampler(
+                    format=audio_format,
+                    layout=audio_layout,
+                    rate=audio_sample_rate)
+            else:
+                audio_resampler = None
             samples = []
             for audio_frame in container.decode(audio_stream):
-                if needs_resampling:
-                    audio_resampler = av.AudioResampler(
-                        format=audio_format,
-                        layout=audio_layout,
-                        rate=audio_sample_rate)
+                if audio_resampler:
                     for audio_frame in audio_resampler.resample(audio_frame):
                         samples.append(audio_frame)
                 else:
+                    samples.append(audio_frame)
+            if audio_resampler:
+                for audio_frame in audio_resampler.resample(None):
                     samples.append(audio_frame)
             # Flatten and rebuild audio frame list
             for audio_frame in samples:
