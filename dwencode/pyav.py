@@ -5,6 +5,19 @@ import av
 import av.container
 
 
+def _open_input(path):
+    # `metadata_errors` was removed in newer av versions (19)
+    try:
+        return av.open(path, metadata_errors='ignore')
+    except TypeError:
+        return av.open(path)
+
+
+def _fraction(rational):
+    # av 19+ returns AVRational, which doesn't support arithmetic
+    return fractions.Fraction(rational.numerator, rational.denominator)
+
+
 def concatenate_videos(
         paths,
         output_path,
@@ -57,13 +70,13 @@ def _concatenate_videos(
         fps, width, height, audio_sample_rate, audio_layout, audio_format)
     if not all(format_args):
         try:
-            temp = av.open(paths[0], metadata_errors='ignore')
+            temp = _open_input(paths[0])
         except BaseException:
             print(paths[0])
             raise
         first_video_stream = temp.streams.video[0]
         if not fps:
-            fps = int(first_video_stream.base_rate)
+            fps = int(_fraction(first_video_stream.base_rate))
         if not width:
             width = first_video_stream.format.width
         if not height:
@@ -110,7 +123,7 @@ def _concatenate_videos(
         yield i, count
 
         # Handle Video
-        container = av.open(path, metadata_errors='ignore')
+        container = _open_input(path)
         video_stream = container.streams.video[0]
         # Set output image size
         video_stream.thread_type = 'AUTO'  # Important for performance
@@ -127,7 +140,8 @@ def _concatenate_videos(
         if first_audio_stream is None:
             continue
         container.seek(0)
-        video_duration = video_stream.duration * video_stream.time_base
+        video_duration = (
+            video_stream.duration * _fraction(video_stream.time_base))
         expected_audio_samples = int(video_duration * audio_sample_rate)
         raw_samples = av.AudioFifo(
             format=audio_format,
